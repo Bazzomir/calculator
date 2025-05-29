@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4-in-1 Calculator</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+    <div class="calculator-container">
+        <div class="calc-selector">
+            <input type="radio" id="classic" name="calc-type" value="classic" checked>
+            <label for="classic">Classic</label>
+
+            <input type="radio" id="scientific" name="calc-type" value="scientific">
+            <label for="scientific">Scientific</label>
+
+            <input type="radio" id="binary" name="calc-type" value="binary">
+            <label for="binary">Binary</label>
+
+            <input type="radio" id="units" name="calc-type" value="units">
+            <label for="units">Units</label>
+        </div>
+
+        <!-- Classic & Scientific Calculator Display -->
+        <div id="calc-display" class="display">
+            <div class="display-top" id="expression"></div>
+            <div class="display-bottom" id="result">
+                <span id="current-input">0</span>
+                <span class="cursor" id="cursor"></span>
+            </div>
+        </div>
+
+        <!-- Classic Calculator -->
+        <div id="classic-calc" class="buttons classic-buttons">
+            <button class="btn clear" onclick="clearAll()">C</button>
+            <button class="btn clear" onclick="clearEntry()">CE</button>
+            <button class="btn" onclick="backspace()">⌫</button>
+            <button class="btn operator" onclick="inputOperator('/')">/</button>
+
+            <button class="btn" onclick="inputNumber('7')">7</button>
+            <button class="btn" onclick="inputNumber('8')">8</button>
+            <button class="btn" onclick="inputNumber('9')">9</button>
+            <button class="btn operator" onclick="inputOperator('*')">×</button>
+
+            <button class="btn" onclick="inputNumber('4')">4</button>
+            <button class="btn" onclick="inputNumber('5')">5</button>
+            <button class="btn" onclick="inputNumber('6')">6</button>
+            <button class="btn operator" onclick="inputOperator('-')">-</button>
+
+            <button class="btn" onclick="inputNumber('1')">1</button>
+            <button class="btn" onclick="inputNumber('2')">2</button>
+            <button class="btn" onclick="inputNumber('3')">3</button>
+            <button class="btn operator" onclick="inputOperator('+')">+</button>
+
+            <button class="btn" onclick="inputNumber('0')" style="grid-column: span 2;">0</button>
+            <button class="btn" onclick="inputNumber('.')">.</button>
+            <button class="btn equals" onclick="calculate()">=</button>
+        </div>
+
+        <!-- Scientific Calculator -->
+        <div id="scientific-calc" class="buttons scientific-buttons hidden">
+            <button class="btn clear" onclick="clearAll()">C</button>
+            <button class="btn clear" onclick="clearEntry()">CE</button>
+            <button class="btn" onclick="backspace()">⌫</button>
+            <button class="btn operator" onclick="inputOperator('/')">/</button>
+            <button class="btn function" onclick="inputFunction('sqrt(')">√</button>
+
+            <button class="btn function" onclick="inputFunction('sin(')">sin</button>
+            <button class="btn function" onclick="inputFunction('cos(')">cos</button>
+            <button class="btn function" onclick="inputFunction('tan(')">tan</button>
+            <button class="btn function" onclick="inputFunction('log(')">log</button>
+            <button class="btn operator" onclick="inputOperator('^')">x^y</button>
+
+            <button class="btn" onclick="inputNumber('7')">7</button>
+            <button class="btn" onclick="inputNumber('8')">8</button>
+            <button class="btn" onclick="inputNumber('9')">9</button>
+            <button class="btn operator" onclick="inputOperator('*')">×</button>
+            <button class="btn function" onclick="inputFunction('factorial(')">n!</button>
+
+            <button class="btn" onclick="inputNumber('4')">4</button>
+            <button class="btn" onclick="inputNumber('5')">5</button>
+            <button class="btn" onclick="inputNumber('6')">6</button>
+            <button class="btn operator" onclick="inputOperator('-')">-</button>
+            <button class="btn function" onclick="inputOperator('%')">%</button>
+
+            <button class="btn" onclick="inputNumber('1')">1</button>
+            <button class="btn" onclick="inputNumber('2')">2</button>
+            <button class="btn" onclick="inputNumber('3')">3</button>
+            <button class="btn operator" onclick="inputOperator('+')">+</button>
+            <button class="btn function" onclick="inputFunction('(')">(</button>
+
+            <button class="btn" onclick="inputNumber('0')">0</button>
+            <button class="btn" onclick="inputNumber('00')">00</button>
+            <button class="btn" onclick="inputNumber('.')">.</button>
+            <button class="btn equals" onclick="calculate()">=</button>
+            <button class="btn function" onclick="inputFunction(')')">)</button>
+
+            <button class="btn function" onclick="inputConstant('π')">π</button>
+            <button class="btn function" onclick="inputConstant('e')">e</button>
+            <button class="btn function" onclick="inputFunction('exp(')">exp</button>
+            <button class="btn function" onclick="inputFunction('log10(')">log10</button>
+            <button class="btn function" onclick="inputFunction('ln2')">ln2</button>
+        </div>
+
+        <!-- Binary Calculator -->
+        <div id="binary-calc" class="binary-section hidden">
+            <div class="binary-input">
+                <label for="decimal-input">Decimal Number:</label>
+                <input type="number" id="decimal-input" placeholder="Enter decimal number">
+            </div>
+            <div class="binary-input">
+                <label for="binary-input">Binary Number:</label>
+                <input type="text" id="binary-input" placeholder="Enter binary number (0s and 1s only)">
+            </div>
+            <button class="btn clear" onclick="clearAll()">Reset</button>
+        </div>
+
+        <!-- Unit Converter -->
+        <div id="units-calc" class="unit-converter hidden">
+            <div class="converter-section">
+                <h3>Length Conversion</h3>
+                <div class="converter-row">
+                    <input type="number" id="length-input" placeholder="Enter value">
+                    <select id="length-from">
+                        <option value="mm">Millimeter</option>
+                        <option value="cm">Centimeter</option>
+                        <option value="m">Meter</option>
+                        <option value="km">Kilometer</option>
+                        <option value="in">Inch</option>
+                        <option value="ft">Feet</option>
+                        <option value="yd">Yard</option>
+                        <option value="mi">Mile</option>
+                    </select>
+                    <span>to</span>
+                    <select id="length-to">
+                        <option value="mm">Millimeter</option>
+                        <option value="cm">Centimeter</option>
+                        <option value="m">Meter</option>
+                        <option value="km">Kilometer</option>
+                        <option value="in">Inch</option>
+                        <option value="ft">Feet</option>
+                        <option value="yd">Yard</option>
+                        <option value="mi">Mile</option>
+                    </select>
+                </div>
+                <div class="converter-row">
+                    <strong>Result: <span id="length-result">0</span></strong>
+                </div>
+                <button class="btn clear" onclick="clearAll()">Clear</button>
+            </div>
+
+            <div class="converter-section">
+                <h3>Weight Conversion</h3>
+                <div class="converter-row">
+                    <input type="number" id="weight-input" placeholder="Enter value">
+                    <select id="weight-from">
+                        <option value="mg">Milligram</option>
+                        <option value="g">Gram</option>
+                        <option value="kg">Kilogram</option>
+                        <option value="oz">Ounce</option>
+                        <option value="lb">Pound</option>
+                        <option value="ton">Ton</option>
+                    </select>
+                    <span>to</span>
+                    <select id="weight-to">
+                        <option value="mg">Milligram</option>
+                        <option value="g">Gram</option>
+                        <option value="kg">Kilogram</option>
+                        <option value="oz">Ounce</option>
+                        <option value="lb">Pound</option>
+                        <option value="ton">Ton</option>
+                    </select>
+                </div>
+                <div class="converter-row">
+                    <strong>Result: <span id="weight-result">0</span></strong>
+                </div>
+                <button class="btn clear" onclick="clearAll()">Clear</button>
+            </div>
+
+            <div class="converter-section">
+                <h3>Temperature Conversion</h3>
+                <div class="converter-row">
+                    <input type="number" id="temp-input" placeholder="Enter temperature">
+                    <select id="temp-from">
+                        <option value="C">Celsius</option>
+                        <option value="F">Fahrenheit</option>
+                        <option value="K">Kelvin</option>
+                    </select>
+                    <span>to</span>
+                    <select id="temp-to">
+                        <option value="C">Celsius</option>
+                        <option value="F">Fahrenheit</option>
+                        <option value="K">Kelvin</option>
+                    </select>
+                </div>
+                <div class="converter-row">
+                    <strong>Result: <span id="temp-result">0</span></strong>
+                </div>
+                <button class="btn clear" onclick="clearAll()">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <p class="author">Copyright © Bazzomir 2025 </p>
+
+    <div class="keyboard-hint">
+        <strong>Keyboard Shortcuts:</strong><br>
+        Numbers: 0-9<br>
+        Operations: + - * /<br>
+        Enter: Calculate<br>
+        Esc: Clear<br>
+        Backspace: Delete<br>
+        Arrow keys: Navigate cursor<br>
+        %: Percentage<br>
+        (: Open parenthesis<br>
+        ): Close parenthesis
+    </div>
+
+</body>
+
+</html>
