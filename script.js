@@ -3,64 +3,88 @@ let expression = '';
 let cursorPosition = 0;
 let isResultDisplayed = false;
 let hasCalculated = false;
+let shouldResetDisplay = false;
+let currentMode = 'classic';
 
 // Calculator switching
-document.querySelectorAll('input[name="calc-type"]').forEach(radio => {
-    radio.addEventListener('change', switchCalculator);
-});
+const radios = document.querySelectorAll('input[name="calc-type"]');
+radios.forEach(radio => radio.addEventListener('change', () => switchCalculator(radio.value)));
 
-function switchCalculator() {
-    const selectedCalc = document.querySelector('input[name="calc-type"]:checked').value;
+function switchCalculator(mode) {
+    currentMode = mode;
+    clearAll();
 
     // Hide all calculators
     document.getElementById('classic-calc').classList.add('hidden');
     document.getElementById('scientific-calc').classList.add('hidden');
     document.getElementById('binary-calc').classList.add('hidden');
     document.getElementById('units-calc').classList.add('hidden');
+    document.getElementById('conversion')?.classList.add('hidden');
 
     // Show selected calculator
-    if (selectedCalc === 'binary' || selectedCalc === 'units') {
-        document.getElementById('calc-display').classList.add('hidden');
-        document.getElementById(selectedCalc + '-calc').classList.remove('hidden');
-    } else {
-        document.getElementById('calc-display').classList.remove('hidden');
-        document.getElementById(selectedCalc + '-calc').classList.remove('hidden');
-        updateDisplay();
+    switch (mode) {
+        case 'classic':
+        case 'scientific':
+            document.getElementById(mode + '-calc').classList.remove('hidden');
+            document.getElementById('display').classList.remove('hidden');
+            break;
+        case 'binary':
+            document.getElementById('binary-calc').classList.remove('hidden');
+            document.getElementById('conversion')?.classList.remove('hidden');
+            document.getElementById('display').classList.remove('hidden');
+            updateBinaryConversion();
+            break;
+        case 'units':
+            document.getElementById('units-calc').classList.remove('hidden');
+            document.getElementById('display').classList.add('hidden');
+            break;
     }
+    updateDisplay();
 }
 
 function updateDisplay() {
     document.getElementById('expression').textContent = expression;
     const currentInputSpan = document.getElementById('current-input');
     const cursor = document.getElementById('cursor');
-
     currentInputSpan.textContent = currentInput;
 
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    context.font = '24px Courier New';
-
-    const textAfterCursor = currentInput.substring(cursorPosition);
-    const textWidth = context.measureText(textAfterCursor).width;
-    cursor.style.right = textWidth + 'px';
-    cursor.style.left = 'auto';
+    if (cursor) {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        context.font = '24px Courier New';
+        const textAfterCursor = currentInput.substring(cursorPosition);
+        const textWidth = context.measureText(textAfterCursor).width;
+        cursor.style.right = textWidth + 'px';
+        cursor.style.left = 'auto';
+    }
 }
 
-function inputNumber(num) {
-    if (hasCalculated) {
-        currentInput = '0';
-        expression = '';
+function appendDigit(digit) {
+    if (currentMode === 'binary' && digit !== '0' && digit !== '1') return;
+
+    if (shouldResetDisplay || hasCalculated) {
+        currentInput = '';
+        shouldResetDisplay = false;
         hasCalculated = false;
         isResultDisplayed = false;
     }
 
-    if (currentInput === '0' && num !== '.') {
-        currentInput = num;
-        cursorPosition = 1;
+    if (currentInput === '0' && digit !== '.') {
+        currentInput = digit;
     } else {
-        currentInput = currentInput.slice(0, cursorPosition) + num + currentInput.slice(cursorPosition);
-        cursorPosition += num.length;
+        currentInput += digit;
     }
+
+    updateDisplay();
+    if (currentMode === 'binary') updateBinaryConversion();
+}
+
+function appendOperator(op) {
+    if (shouldResetDisplay) shouldResetDisplay = false;
+
+    if (expression && !isNaN(currentInput)) calculate();
+    expression = currentInput + ' ' + op + ' ';
+    shouldResetDisplay = true;
     updateDisplay();
 }
 
@@ -75,9 +99,7 @@ function inputOperator(op) {
         return;
     }
 
-    if (currentInput === '0' && op !== '-') {
-        return;
-    }
+    if (currentInput === '0' && op !== '-') return;
 
     if (currentInput === '-' && op !== '-') {
         currentInput = '0';
@@ -85,17 +107,14 @@ function inputOperator(op) {
         return;
     }
 
-    if (expression.endsWith(' + ') || expression.endsWith(' - ') ||
-        expression.endsWith(' * ') || expression.endsWith(' / ')) {
+    if (expression.endsWith(' + ') || expression.endsWith(' - ') || expression.endsWith(' * ') || expression.endsWith(' / ')) {
         expression = expression.slice(0, -3) + ' ' + op + ' ';
         updateDisplay();
         return;
     }
 
     if (currentInput !== '' && currentInput !== '0') {
-        if (expression !== '' && !isResultDisplayed) {
-            calculate();
-        }
+        if (expression !== '' && !isResultDisplayed) calculate();
         expression = (expression || currentInput) + ' ' + op + ' ';
         currentInput = '0';
         cursorPosition = 1;
@@ -108,84 +127,43 @@ function inputOperator(op) {
     }
 }
 
-function inputFunction(func) {
-    if (isResultDisplayed) {
-        currentInput = '0';
-        expression = '';
-        isResultDisplayed = false;
-        hasCalculated = false;
-    }
-
-    if (currentInput === '0') {
-        currentInput = func;
-        cursorPosition = func.length;
-    } else {
-        currentInput = currentInput.slice(0, cursorPosition) + func + currentInput.slice(cursorPosition);
-        cursorPosition += func.length;
-    }
-    updateDisplay();
-}
-
-function inputConstant(constant) {
-    if (isResultDisplayed) {
-        currentInput = '0';
-        expression = '';
-        isResultDisplayed = false;
-        hasCalculated = false;
-    }
-
-    let value = constant === 'π' ? Math.PI.toString() : Math.E.toString();
-
-    if (currentInput === '0') {
-        currentInput = value;
-        cursorPosition = value.length;
-    } else {
-        currentInput = currentInput.slice(0, cursorPosition) + value + currentInput.slice(cursorPosition);
-        cursorPosition += value.length;
-    }
-    updateDisplay();
-}
-
 function calculate() {
+    if (!expression && currentMode !== 'scientific') return;
+
     try {
         let fullExpression = expression + currentInput;
 
-        // Replace display operators
-        fullExpression = fullExpression.replace(/×/g, '*');
-        fullExpression = fullExpression.replace(/\^/g, '**');
+        fullExpression = fullExpression.replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**');
+        fullExpression = fullExpression.replace(/sin\(/g, 'Math.sin(')
+            .replace(/cos\(/g, 'Math.cos(')
+            .replace(/tan\(/g, 'Math.tan(')
+            .replace(/sqrt\(/g, 'Math.sqrt(')
+            .replace(/log\(/g, 'Math.log10(')
+            .replace(/ln2/g, 'Math.LN2')
+            .replace(/exp\(/g, 'Math.exp(');
 
-        // Handle scientific functions
-        fullExpression = fullExpression.replace(/sin\(/g, 'Math.sin(');
-        fullExpression = fullExpression.replace(/cos\(/g, 'Math.cos(');
-        fullExpression = fullExpression.replace(/tan\(/g, 'Math.tan(');
-        fullExpression = fullExpression.replace(/sqrt\(/g, 'Math.sqrt(');
-        fullExpression = fullExpression.replace(/log\(/g, 'Math.log10(');
-        fullExpression = fullExpression.replace(/log10\(/g, 'Math.log10(');
-        fullExpression = fullExpression.replace(/exp\(/g, 'Math.exp(');
-        fullExpression = fullExpression.replace(/ln2/g, 'Math.LN2');
-
-        // Handle factorial
-        fullExpression = fullExpression.replace(/factorial\(([^)]+)\)/g, (match, num) => {
-            return factorial(parseFloat(num));
-        });
-
-        // Handle percentage
+        fullExpression = fullExpression.replace(/factorial\(([^)]+)\)/g, (match, num) => factorial(parseFloat(num)));
         fullExpression = fullExpression.replace(/(\d+(?:\.\d+)?)\s*%/g, '($1/100)');
+
+        if (currentMode === 'binary') {
+            fullExpression = fullExpression.split(' ').map(part => part.match(/^[01]+$/) ? parseInt(part, 2).toString() : part).join(' ');
+        }
 
         let result = eval(fullExpression);
 
-        if (isNaN(result) || !isFinite(result)) {
-            throw new Error('Invalid calculation');
-        }
+        if (isNaN(result) || !isFinite(result)) throw new Error('Invalid calculation');
 
-        expression = fullExpression + ' = ';
-        currentInput = result.toString();
+        currentInput = currentMode === 'binary' ? Math.floor(result).toString(2) : result.toString();
+        expression = '';
         cursorPosition = currentInput.length;
         isResultDisplayed = true;
         hasCalculated = true;
+        shouldResetDisplay = true;
         updateDisplay();
-    } catch (error) {
+        if (currentMode === 'binary') updateBinaryConversion();
+    } catch {
         currentInput = 'Error';
+        expression = '';
         cursorPosition = 5;
         isResultDisplayed = true;
         hasCalculated = true;
@@ -195,12 +173,7 @@ function calculate() {
 
 function factorial(n) {
     if (n < 0 || n !== Math.floor(n)) return NaN;
-    if (n === 0 || n === 1) return 1;
-    let result = 1;
-    for (let i = 2; i <= n; i++) {
-        result *= i;
-    }
-    return result;
+    return Array.from({ length: n }, (_, i) => i + 1).reduce((a, b) => a * b, 1);
 }
 
 function clearAll() {
@@ -209,7 +182,9 @@ function clearAll() {
     cursorPosition = 1;
     isResultDisplayed = false;
     hasCalculated = false;
+    shouldResetDisplay = false;
     updateDisplay();
+    if (currentMode === 'binary') updateBinaryConversion();
 }
 
 function clearEntry() {
@@ -217,23 +192,39 @@ function clearEntry() {
     cursorPosition = 1;
     hasCalculated = false;
     updateDisplay();
+    if (currentMode === 'binary') updateBinaryConversion();
 }
 
 function backspace() {
-    if (hasCalculated) {
-        clearAll();
-        return;
-    }
+    if (hasCalculated) return clearAll();
+    currentInput = currentInput.length > 1 ? currentInput.slice(0, -1) : '0';
+    updateDisplay();
+    if (currentMode === 'binary') updateBinaryConversion();
+}
 
-    if (cursorPosition > 0) {
-        currentInput = currentInput.slice(0, cursorPosition - 1) + currentInput.slice(cursorPosition);
-        cursorPosition--;
-        if (currentInput === '' || currentInput === '-') {
-            currentInput = '0';
-            cursorPosition = 1;
-        }
-        updateDisplay();
+function inputFunction(func) {
+    if (shouldResetDisplay || isResultDisplayed) {
+        currentInput = '';
+        shouldResetDisplay = false;
+        isResultDisplayed = false;
     }
+    currentInput += func;
+    updateDisplay();
+}
+
+function inputConstant(constant) {
+    if (shouldResetDisplay || isResultDisplayed) {
+        currentInput = '';
+        shouldResetDisplay = false;
+        isResultDisplayed = false;
+    }
+    currentInput = (constant === 'π' ? Math.PI : Math.E).toString();
+    updateDisplay();
+}
+
+function updateBinaryConversion() {
+    const binaryValue = currentInput === '0' ? '0' : currentInput;
+    document.getElementById('decimal').textContent = binaryValue.match(/^[01]+$/) ? parseInt(binaryValue, 2) : 'Invalid';
 }
 
 // Keyboard support
@@ -244,19 +235,19 @@ document.addEventListener('keydown', function (event) {
         event.preventDefault();
 
         if (event.key >= '0' && event.key <= '9') {
-            inputNumber(event.key);
+            appendDigit(event.key);
         } else if (event.key === '.') {
-            inputNumber('.');
+            appendDigit('.');
         } else if (event.key === '+') {
-            inputOperator('+');
+            appendOperator('+');
         } else if (event.key === '-') {
-            inputOperator('-');
+            appendOperator('-');
         } else if (event.key === '*') {
-            inputOperator('*');
+            appendOperator('*');
         } else if (event.key === '/') {
-            inputOperator('/');
+            appendOperator('/');
         } else if (event.key === '%') {
-            inputOperator('%');
+            appendOperator('%');
         } else if (event.key === '(' && selectedCalc === 'scientific') {
             inputFunction('(');
         } else if (event.key === ')' && selectedCalc === 'scientific') {
@@ -283,121 +274,47 @@ document.addEventListener('keydown', function (event) {
     }
 });
 
-// Binary calculator
-document.getElementById('decimal-input').addEventListener('input', function () {
-    const decimal = parseInt(this.value);
-    if (!isNaN(decimal)) {
-        document.getElementById('binary-input').value = decimal.toString(2);
-    } else {
-        document.getElementById('binary-input').value = '';
-    }
-});
-
-document.getElementById('binary-input').addEventListener('input', function () {
-    const binary = this.value.replace(/[^01]/g, '');
-    this.value = binary;
-    if (binary) {
-        document.getElementById('decimal-input').value = parseInt(binary, 2);
-    } else {
-        document.getElementById('decimal-input').value = '';
-    }
-});
-
-// Unit converters
-const lengthConversions = {
-    mm: 1,
-    cm: 10,
-    m: 1000,
-    km: 1000000,
-    in: 25.4,
-    ft: 304.8,
-    yd: 914.4,
-    mi: 1609344
-};
-
-const weightConversions = {
-    mg: 1,
-    g: 1000,
-    kg: 1000000,
-    oz: 28349.5,
-    lb: 453592,
-    ton: 1000000000
-};
+// Unit Conversions
+const lengthConversions = { mm: 1, cm: 10, m: 1000, km: 1000000, in: 25.4, ft: 304.8, yd: 914.4, mi: 1609344 };
+const weightConversions = { mg: 1, g: 1000, kg: 1000000, oz: 28349.5, lb: 453592, ton: 1000000000 };
 
 function setupConverter(type, conversions) {
-    const input = document.getElementById(type + '-input');
-    const fromSelect = document.getElementById(type + '-from');
-    const toSelect = document.getElementById(type + '-to');
-    const result = document.getElementById(type + '-result');
+    const input = document.getElementById(`${type}-input`);
+    const from = document.getElementById(`${type}-from`);
+    const to = document.getElementById(`${type}-to`);
+    const result = document.getElementById(`${type}-result`);
 
     function convert() {
         const value = parseFloat(input.value);
-        if (isNaN(value)) {
-            result.textContent = '0';
-            return;
-        }
-
-        const fromUnit = fromSelect.value;
-        const toUnit = toSelect.value;
-
-        if (type === 'temp') {
-            result.textContent = convertTemperature(value, fromUnit, toUnit).toFixed(2);
-        } else {
-            const baseValue = value * conversions[fromUnit];
-            const convertedValue = baseValue / conversions[toUnit];
-            result.textContent = convertedValue.toFixed(6).replace(/\.?0+$/, '');
-        }
+        if (isNaN(value)) return result.textContent = '0';
+        const converted = (value * conversions[from.value]) / conversions[to.value];
+        result.textContent = converted.toFixed(6).replace(/\.?0+$/, '');
     }
 
-    input.addEventListener('input', convert);
-    fromSelect.addEventListener('change', convert);
-    toSelect.addEventListener('change', convert);
+    [input, from, to].forEach(el => {
+        el.addEventListener('input', convert);
+        el.addEventListener('change', convert);
+    });
 }
 
-function convertTemperature(value, from, to) {
-    let celsius;
+function convertTemperature() {
+    const value = parseFloat(document.getElementById('temp-input').value);
+    if (isNaN(value)) return document.getElementById('temp-result').textContent = '0';
 
-    switch (from) {
-        case 'F':
-            celsius = (value - 32) * 5 / 9;
-            break;
-        case 'K':
-            celsius = value - 273.15;
-            break;
-        default:
-            celsius = value;
-    }
+    const from = document.getElementById('temp-from').value;
+    const to = document.getElementById('temp-to').value;
 
-    switch (to) {
-        case 'F':
-            return celsius * 9 / 5 + 32;
-        case 'K':
-            return celsius + 273.15;
-        default:
-            return celsius;
-    }
+    let c = from === 'F' ? (value - 32) * 5 / 9 : from === 'K' ? value - 273.15 : value;
+    let result = to === 'F' ? c * 9 / 5 + 32 : to === 'K' ? c + 273.15 : c;
+    document.getElementById('temp-result').textContent = result.toFixed(2);
 }
+
+['temp-input', 'temp-from', 'temp-to'].forEach(id => {
+    document.getElementById(id).addEventListener('input', convertTemperature);
+    document.getElementById(id).addEventListener('change', convertTemperature);
+});
 
 setupConverter('length', lengthConversions);
 setupConverter('weight', weightConversions);
-
-// Temperature converter
-const tempInput = document.getElementById('temp-input');
-const tempFrom = document.getElementById('temp-from');
-const tempTo = document.getElementById('temp-to');
-const tempResult = document.getElementById('temp-result');
-
-function convertTemp() {
-    const value = parseFloat(tempInput.value);
-    if (isNaN(value)) {
-        tempResult.textContent = '0';
-        return;
-    }
-    tempResult.textContent = convertTemperature(value, tempFrom.value, tempTo.value).toFixed(2);
-}
-
-tempInput.addEventListener('input', convertTemp);
-tempFrom.addEventListener('change', convertTemp);
-tempTo.addEventListener('change', convertTemp);
 
 updateDisplay();
