@@ -1,778 +1,867 @@
-// ===== CALCULATOR STATE =====
-let currentInput = '0';
-let expression = '';
-let cursorPosition = 1;
-let isResultDisplayed = false;
-let hasCalculated = false;
-let shouldResetDisplay = false;
-let currentMode = 'classic';
-
-// ===== INITIALIZATION =====
-document.addEventListener('DOMContentLoaded', function () {
-    initializeCalculator();
-    setupEventListeners();
-    setupConverters();
-    updateDisplay();
-});
-
-function initializeCalculator() {
-    const radios = document.querySelectorAll('input[name="calc-type"]');
-    radios.forEach(radio => {
-        radio.addEventListener('change', () => switchCalculator(radio.value));
-    });
-}
-
-function setupEventListeners() {
-    document.addEventListener('keydown', handleKeyboardInput);
-}
-
-// ===== CALCULATOR SWITCHING =====
-function switchCalculator(mode) {
-    currentMode = mode;
-    clearAll();
-
-    const calculators = ['classic-calc', 'scientific-calc', 'binary-calc', 'units-calc'];
-    calculators.forEach(calc => {
-        const element = document.getElementById(calc);
-        if (element) element.classList.add('hidden');
-    });
-
-    const conversion = document.getElementById('conversion');
-    if (conversion) conversion.classList.add('hidden');
-
-    switch (mode) {
-        case 'classic':
-        case 'scientific':
-            showCalculatorMode(mode);
-            break;
-        case 'binary':
-            showBinaryCalculator();
-            break;
-        case 'units':
-            showUnitsCalculator();
-            break;
+// =======================
+// MAIN CALCULATOR MANAGER
+// =======================
+class CalculatorManager {
+    constructor() {
+        this.calculator = null;
+        this.converter = null;
+        this.init();
     }
-    updateDisplay();
-}
 
-function showCalculatorMode(mode) {
-    document.getElementById(mode + '-calc').classList.remove('hidden');
-    document.getElementById('display').classList.remove('hidden');
-}
-
-function showBinaryCalculator() {
-    document.getElementById('binary-calc').classList.remove('hidden');
-    const conversion = document.getElementById('conversion');
-    if (conversion) conversion.classList.remove('hidden');
-    document.getElementById('display').classList.remove('hidden');
-    updateBinaryConversion();
-}
-
-function showUnitsCalculator() {
-    document.getElementById('units-calc').classList.remove('hidden');
-    document.getElementById('display').classList.add('hidden');
-}
-
-// ===== DISPLAY MANAGEMENT =====
-function updateDisplay() {
-    updateExpressionDisplay();
-    updateCurrentInputDisplay();
-    updateCursorPosition();
-
-    if (currentMode === 'binary') {
-        updateBinaryConversion();
+    init() {
+        this.setupModeHandlers();
+        this.initializeCalculator();
+        this.initializeConverter();
+        this.setInitialMode();
     }
-}
 
-function updateExpressionDisplay() {
-    const expressionElement = document.getElementById('expression');
-    if (expressionElement) {
-        // Clean up expression display - remove extra spaces and format properly
-        const cleanExpression = expression.replace(/\s+/g, ' ').trim();
-        expressionElement.textContent = cleanExpression;
+    setupModeHandlers() {
+        const radios = document.querySelectorAll('input[name="calc-type"]');
+        radios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (radio.checked) this.switchMode(radio.value);
+            });
+        });
     }
-}
 
-function updateCurrentInputDisplay() {
-    const currentInputSpan = document.getElementById('current-input');
-    if (currentInputSpan) {
-        // Ensure we display clean, readable text
-        let displayText = currentInput;
-        
-        // Format numbers with commas for readability (but not for binary or if it contains functions)
-        if (currentMode !== 'binary' && !displayText.includes('(') && !displayText.includes('Error') && !isNaN(parseFloat(displayText.replace(/,/g, '')))) {
-            const num = parseFloat(displayText.replace(/,/g, ''));
-            if (Math.abs(num) >= 1000 && isFinite(num)) {
-                displayText = formatNumberWithCommas(displayText);
+    switchMode(mode) {
+        this.hideAllCalcs();
+        this.resetClassicButtons();
+
+        const display = document.getElementById('display');
+        const modes = {
+            units: () => {
+                display?.classList.add('hidden');
+                document.getElementById('units-calc')?.classList.remove('hidden');
+            },
+            classic: () => {
+                display?.classList.remove('hidden');
+                document.getElementById('classic-calc')?.classList.remove('hidden');
+            },
+            scientific: () => {
+                display?.classList.remove('hidden');
+                document.getElementById('scientific-calc')?.classList.remove('hidden');
+            },
+            binary: () => {
+                display?.classList.remove('hidden');
+                document.getElementById('classic-calc')?.classList.remove('hidden');
+                this.enableBinaryMode();
             }
+        };
+
+        (modes[mode] || modes.classic)();
+    }
+
+    hideAllCalcs() {
+        ['classic-calc', 'scientific-calc', 'units-calc'].forEach(id => {
+            document.getElementById(id)?.classList.add('hidden');
+        });
+    }
+
+    resetClassicButtons() {
+        document.querySelectorAll('#classic-calc .btn').forEach(btn => {
+            btn.classList.remove('disabled');
+            btn.disabled = false;
+        });
+    }
+
+    enableBinaryMode() {
+        const disabledChars = ['2', '3', '4', '5', '6', '7', '8', '9', '.'];
+        document.querySelectorAll('#classic-calc .btn').forEach(btn => {
+            if (disabledChars.includes(btn.textContent.trim())) {
+                btn.classList.add('disabled');
+                btn.disabled = true;
+            }
+        });
+    }
+
+    initializeCalculator() {
+        const expression = document.getElementById('expression');
+        const input = document.getElementById('current-input');
+        const cursor = document.getElementById('cursor');
+
+        if (expression && input && cursor) {
+            this.calculator = new Calculator(expression, input, cursor);
         }
-        
-        currentInputSpan.textContent = displayText;
+    }
+
+    initializeConverter() {
+        this.converter = new UnitsConverter();
+        window.clearAll = () => this.converter.clearAll();
+    }
+
+    setInitialMode() {
+        const checkedRadio = document.querySelector('input[name="calc-type"]:checked');
+        const mode = checkedRadio?.value || 'classic';
+        this.switchMode(mode);
+
+        // Show first converter section by default
+        document.querySelectorAll('#units-calc .converter-section').forEach((section, index) => {
+            section.style.display = index === 0 ? 'block' : 'none';
+        });
+    }
+
+    // Helper method to check if units mode is active
+    isUnitsMode() {
+        return document.getElementById('units')?.checked;
     }
 }
 
-function formatNumberWithCommas(numStr) {
-    if (numStr.includes('.')) {
-        const [integer, decimal] = numStr.split('.');
-        const formattedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        return formattedInteger + '.' + decimal;
-    } else {
-        return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    }
-}
-
-function updateCursorPosition() {
-    const cursor = document.getElementById('cursor');
-    if (!cursor) return;
-
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    context.font = '24px Courier New';
-
-    const textAfterCursor = currentInput.substring(cursorPosition);
-    const textWidth = context.measureText(textAfterCursor).width;
-
-    cursor.style.right = textWidth + 'px';
-    cursor.style.left = 'auto';
-}
-
-function updateBinaryConversion() {
-    const decimal = document.getElementById('decimal');
-    if (!decimal) return;
-
-    if (currentInput === '' || currentInput === '0') {
-        decimal.textContent = '0';
-    } else {
-        const decimalValue = parseInt(currentInput, 2);
-        decimal.textContent = isNaN(decimalValue) ? 'Invalid' : decimalValue;
-    }
-}
-
-// ===== INPUT HANDLING =====
-function appendDigit(digit) {
-    if (currentMode === 'binary' && digit !== '0' && digit !== '1') {
-        return;
+// =======================
+// CALCULATOR CLASS
+// =======================
+class Calculator {
+    constructor(expressionEl, inputEl, cursorEl) {
+        this.expressionEl = expressionEl;
+        this.inputEl = inputEl;
+        this.cursorEl = cursorEl;
+        this.clearAll();
+        this.bindEvents();
+        this.attachClickCursorPositioning();
     }
 
-    if (shouldResetDisplay || hasCalculated) {
-        resetForNewInput();
+    // State management
+    clearAll() {
+        Object.assign(this, {
+            expression: '',
+            input: '0',
+            cursorPos: 1,
+            operation: undefined,
+            previous: ''
+        });
+        this.updateDisplay();
     }
 
-    if (digit === '.') {
-        if (currentMode === 'binary') return;
-        if (currentInput.includes('.')) return;
-        insertCharacterAtCursor(digit);
-        updateDisplay();
-        return;
+    clearEntry() {
+        this.input = '0';
+        this.cursorPos = 1;
+        this.updateDisplay();
     }
 
-    if (currentMode === 'binary') {
-        insertCharacterAtCursor(digit);
-    } else {
-        if (currentInput === '0') {
-            currentInput = digit;
-            cursorPosition = 1;
+    // Input handling
+    appendDigit(digit) {
+        if (this.input === 'Error') this.clearError();
+
+        const isBinary = this.isBinaryMode();
+        if (isBinary && !['0', '1', '00'].includes(digit)) return;
+
+        if (this.input === '0' && digit !== '.' && this.cursorPos === 1) {
+            this.input = digit;
+            this.cursorPos = digit.length;
         } else {
-            insertCharacterAtCursor(digit);
+            if (!isBinary && digit === '.' && this.input.includes('.')) return;
+            this.input = this.insertAtCursor(digit);
+            this.cursorPos += digit.length;
         }
+        this.updateDisplay();
     }
 
-    updateDisplay();
-}
+    appendFunction(func) {
+        if (this.input === 'Error') this.clearError();
 
-function insertCharacterAtCursor(char) {
-    const beforeCursor = currentInput.substring(0, cursorPosition);
-    const afterCursor = currentInput.substring(cursorPosition);
-    currentInput = beforeCursor + char + afterCursor;
-    cursorPosition++;
-}
-
-function deleteCharacterAtCursor() {
-    if (hasCalculated) {
-        return clearAll();
-    }
-
-    if (cursorPosition > 0) {
-        const beforeCursor = currentInput.substring(0, cursorPosition - 1);
-        const afterCursor = currentInput.substring(cursorPosition);
-        currentInput = beforeCursor + afterCursor;
-        cursorPosition--;
-
-        if (currentInput === '') {
-            currentInput = '0';
-            cursorPosition = 1;
-        }
-    }
-
-    updateDisplay();
-}
-
-function resetForNewInput() {
-    currentInput = '';
-    cursorPosition = 0;
-    shouldResetDisplay = false;
-    hasCalculated = false;
-    isResultDisplayed = false;
-}
-
-// ===== OPERATORS =====
-function appendOperator(op) {
-    if (shouldResetDisplay) shouldResetDisplay = false;
-
-    if (expression && !isNaN(parseFloat(currentInput.replace(/,/g, '')))) {
-        calculate();
-    }
-
-    const cleanInput = currentInput.replace(/,/g, '');
-    expression = cleanInput + ' ' + op + ' ';
-    shouldResetDisplay = true;
-    updateDisplay();
-}
-
-function inputOperator(op) {
-    if (hasCalculated) {
-        const cleanInput = currentInput.replace(/,/g, '');
-        expression = cleanInput + ' ' + op + ' ';
-        currentInput = '0';
-        cursorPosition = 1;
-        hasCalculated = false;
-        isResultDisplayed = false;
-        updateDisplay();
-        return;
-    }
-
-    if (currentInput === '0' && op !== '-') return;
-
-    if (currentInput === '-' && op !== '-') {
-        currentInput = '0';
-        cursorPosition = 1;
-        return;
-    }
-
-    const operators = [' + ', ' - ', ' * ', ' / '];
-    const hasOperator = operators.some(operator => expression.endsWith(operator));
-
-    if (hasOperator) {
-        expression = expression.slice(0, -3) + ' ' + op + ' ';
-        updateDisplay();
-        return;
-    }
-
-    const cleanInput = currentInput.replace(/,/g, '');
-    if (cleanInput !== '' && cleanInput !== '0') {
-        if (expression !== '' && !isResultDisplayed) {
-            calculate();
-        }
-        expression = (expression || cleanInput) + ' ' + op + ' ';
-        currentInput = '0';
-        cursorPosition = 1;
-        isResultDisplayed = false;
-        updateDisplay();
-    } else if (op === '-' && currentInput === '0') {
-        currentInput = '-';
-        cursorPosition = 1;
-        updateDisplay();
-    }
-}
-
-// ===== CALCULATIONS =====
-function calculate() {
-    if (!expression && currentMode !== 'scientific') return;
-
-    try {
-        let result;
-
-        if (currentMode === 'binary') {
-            result = performBinaryCalculation();
-            if (result === null) return;
-            currentInput = result;
-        } else {
-            result = performStandardCalculation();
-            if (isNaN(result) || !isFinite(result)) {
-                throw new Error('Invalid calculation');
-            }
-            // Format result properly
-            currentInput = formatCalculationResult(result);
-        }
-
-        expression = '';
-        cursorPosition = currentInput.length;
-        isResultDisplayed = true;
-        hasCalculated = true;
-        shouldResetDisplay = true;
-
-        updateDisplay();
-    } catch (error) {
-        displayError();
-    }
-}
-
-function formatCalculationResult(result) {
-    // Handle very large or very small numbers
-    if (Math.abs(result) >= 1e15 || (Math.abs(result) < 1e-6 && result !== 0)) {
-        return result.toExponential(6);
-    }
-    
-    // Handle regular numbers
-    if (result % 1 === 0) {
-        return result.toString();
-    } else {
-        // Remove trailing zeros from decimals
-        return parseFloat(result.toFixed(10)).toString();
-    }
-}
-
-function performBinaryCalculation() {
-    const parts = expression.trim().split(' ');
-    if (parts.length !== 3) return null;
-
-    const [left, operator, right] = parts;
-    const a = parseInt(left, 2);
-    const b = parseInt(currentInput, 2);
-
-    if (isNaN(a) || isNaN(b)) {
-        alert('Invalid binary number');
-        return null;
-    }
-
-    let result;
-    switch (operator) {
-        case '+': result = a + b; break;
-        case '-': result = a - b; break;
-        case '*': result = a * b; break;
-        case '/':
-            if (b === 0) {
-                alert('Cannot divide by zero');
-                return null;
-            }
-            result = Math.floor(a / b);
-            break;
-        default: return null;
-    }
-
-    if (result < 0) {
-        alert('Negative results not supported in binary calculator');
-        return '0';
-    }
-
-    return result.toString(2);
-}
-
-function performStandardCalculation() {
-    const cleanExpression = expression.replace(/,/g, '');
-    const cleanCurrentInput = currentInput.replace(/,/g, '');
-    let fullExpression = cleanExpression + cleanCurrentInput;
-
-    // Replace mathematical symbols with JavaScript equivalents
-    fullExpression = fullExpression
-        .replace(/×/g, '*')
-        .replace(/÷/g, '/')
-        .replace(/\^/g, '**');
-
-    // Handle scientific functions properly
-    fullExpression = replaceMathFunctions(fullExpression);
-
-    // Handle factorial
-    fullExpression = fullExpression.replace(/factorial\(([^)]+)\)/g, (match, num) => {
-        return factorial(parseFloat(num));
-    });
-
-    // Handle percentage
-    fullExpression = fullExpression.replace(/(\d+(?:\.\d+)?)\s*%/g, '($1/100)');
-
-    return eval(fullExpression);
-}
-
-function replaceMathFunctions(expression) {
-    // Replace math functions with proper Math object calls
-    const functionMap = {
-        'sin(': 'Math.sin(',
-        'cos(': 'Math.cos(',
-        'tan(': 'Math.tan(',
-        'sqrt(': 'Math.sqrt(',
-        'log(': 'Math.log10(',
-        'ln(': 'Math.log(',
-        'exp(': 'Math.exp(',
-        'π': Math.PI.toString(),
-        'e': Math.E.toString()
-    };
-
-    let result = expression;
-    for (const [func, replacement] of Object.entries(functionMap)) {
-        result = result.replace(new RegExp(func.replace(/[()]/g, '\\$&'), 'g'), replacement);
-    }
-
-    return result;
-}
-
-function factorial(n) {
-    if (n < 0 || n !== Math.floor(n)) return NaN;
-    if (n === 0 || n === 1) return 1;
-    if (n > 170) return Infinity; // Prevent overflow
-
-    let result = 1;
-    for (let i = 2; i <= n; i++) {
-        result *= i;
-    }
-    return result;
-}
-
-function displayError() {
-    currentInput = 'Error';
-    expression = '';
-    cursorPosition = 5;
-    isResultDisplayed = true;
-    hasCalculated = true;
-    updateDisplay();
-}
-
-// ===== CLEAR FUNCTIONS =====
-function clearAll() {
-    currentInput = '0';
-    expression = '';
-    cursorPosition = 1;
-    isResultDisplayed = false;
-    hasCalculated = false;
-    shouldResetDisplay = false;
-    updateDisplay();
-}
-
-function clearEntry() {
-    currentInput = '0';
-    cursorPosition = 1;
-    hasCalculated = false;
-    updateDisplay();
-}
-
-function backspace() {
-    deleteCharacterAtCursor();
-}
-
-// ===== SCIENTIFIC FUNCTIONS =====
-function inputFunction(func) {
-    if (shouldResetDisplay || isResultDisplayed) {
-        resetForNewInput();
-    }
-
-    // Clean function input
-    let functionString = func;
-    if (!functionString.endsWith('(')) {
-        functionString += '(';
-    }
-
-    if (currentInput === '0') {
-        currentInput = functionString;
-        cursorPosition = currentInput.length;
-    } else {
-        insertCharacterAtCursor(functionString);
-    }
-
-    updateDisplay();
-}
-
-function inputConstant(constant) {
-    if (shouldResetDisplay || isResultDisplayed) {
-        resetForNewInput();
-    }
-    
-    let value;
-    switch(constant) {
-        case 'π':
-            value = Math.PI.toString();
-            break;
-        case 'e':
-            value = Math.E.toString();
-            break;
-        default:
-            value = constant;
-    }
-    
-    currentInput = value;
-    cursorPosition = value.length;
-    updateDisplay();
-}
-
-// ===== KEYBOARD SUPPORT =====
-function handleKeyboardInput(event) {
-    const selectedCalc = document.querySelector('input[name="calc-type"]:checked')?.value;
-    if (!selectedCalc) return;
-
-    if (['classic', 'scientific', 'binary'].includes(selectedCalc)) {
-        event.preventDefault();
-        handleCalculatorKeys(event, selectedCalc);
-    }
-}
-
-function handleCalculatorKeys(event, calcType) {
-    const key = event.key;
-
-    if (key >= '0' && key <= '9') {
-        appendDigit(key);
-    }
-    else if (key === '.' && calcType !== 'binary') {
-        appendDigit('.');
-    }
-    else if (key === '+') {
-        appendOperator('+');
-    }
-    else if (key === '-') {
-        appendOperator('-');
-    }
-    else if (key === '*') {
-        appendOperator('*');
-    }
-    else if (key === '/') {
-        appendOperator('/');
-    }
-    else if (key === '%' && calcType !== 'binary') {
-        appendOperator('%');
-    }
-    else if (key === '(' && calcType === 'scientific') {
-        insertCharacterAtCursor('(');
-        updateDisplay();
-    }
-    else if (key === ')' && calcType === 'scientific') {
-        insertCharacterAtCursor(')');
-        updateDisplay();
-    }
-    else if (key === 'Enter' || key === '=') {
-        calculate();
-    }
-    else if (key === 'Escape') {
-        clearAll();
-    }
-    else if (key === 'Delete') {
-        clearEntry();
-    }
-    else if (key === 'Backspace') {
-        backspace();
-    }
-    else if (key === 'ArrowLeft') {
-        moveCursorLeft();
-    }
-    else if (key === 'ArrowRight') {
-        moveCursorRight();
-    }
-}
-
-function moveCursorLeft() {
-    if (cursorPosition > 0) {
-        cursorPosition--;
-        updateDisplay();
-    }
-}
-
-function moveCursorRight() {
-    if (cursorPosition < currentInput.length) {
-        cursorPosition++;
-        updateDisplay();
-    }
-}
-
-// ===== UNIT CONVERSIONS =====
-const CONVERSIONS = {
-    length: {
-        mm: 1, cm: 10, m: 1000, km: 1000000,
-        in: 25.4, ft: 304.8, yd: 914.4, mi: 1609344
-    },
-    weight: {
-        mg: 1, g: 1000, kg: 1000000,
-        oz: 28349.5, lb: 453592, ton: 1000000000
-    }
-};
-
-function setupConverters() {
-    setupConverter('length', CONVERSIONS.length);
-    setupConverter('weight', CONVERSIONS.weight);
-    setupTemperatureConverter();
-    setupBinaryConverter();
-    addResetButtons();
-}
-
-function setupConverter(type, conversions) {
-    const input = document.getElementById(`${type}-input`);
-    const from = document.getElementById(`${type}-from`);
-    const to = document.getElementById(`${type}-to`);
-    const result = document.getElementById(`${type}-result`);
-
-    if (!input || !from || !to || !result) return;
-
-    function convert() {
-        const value = parseFloat(input.value);
-        if (isNaN(value) || input.value === '') {
-            result.textContent = '0';
+        if (['(', ')'].includes(func)) {
+            this.insertParentheses(func);
             return;
         }
 
-        const converted = (value * conversions[from.value]) / conversions[to.value];
-        result.textContent = formatResult(converted);
+        if (func.endsWith('(')) {
+            this.insertFunction(func);
+        }
     }
 
-    [input, from, to].forEach(element => {
-        element.addEventListener('input', convert);
-        element.addEventListener('change', convert);
-    });
+    insertParentheses(paren) {
+        if (this.input === '0') {
+            this.input = paren;
+            this.cursorPos = paren.length;
+        } else {
+            this.input = this.insertAtCursor(paren);
+            this.cursorPos += paren.length;
+        }
+        this.updateDisplay();
+    }
+
+    insertFunction(func) {
+        const isSimpleNumber = /^-?\d+(\.\d+)?$/.test(this.input.trim());
+
+        if (isSimpleNumber && this.input !== '0') {
+            this.input = func + this.input + ')';
+            this.cursorPos = this.input.length;
+        } else if (this.input === '0') {
+            this.input = func;
+            this.cursorPos = func.length;
+        } else {
+            this.input = this.insertAtCursor(func);
+            this.cursorPos += func.length;
+        }
+        this.updateDisplay();
+    }
+
+    insertConstant(constant) {
+        if (this.input === 'Error') this.clearError();
+
+        const constants = { π: Math.PI, pi: Math.PI, e: Math.E };
+        const value = constants[constant];
+        if (!value) return;
+
+        const isBinary = this.isBinaryMode();
+        const valueStr = isBinary ? Math.floor(value).toString(2) : value.toString();
+
+        if (this.input === '0') {
+            this.input = valueStr;
+            this.cursorPos = this.input.length;
+        } else {
+            this.input = this.insertAtCursor(valueStr);
+            this.cursorPos += valueStr.length;
+        }
+        this.updateDisplay();
+    }
+
+    toggleSign() {
+        if (this.input === '0') return;
+
+        if (this.input.startsWith('-')) {
+            this.input = this.input.slice(1);
+            this.cursorPos = Math.max(0, this.cursorPos - 1);
+        } else {
+            this.input = '-' + this.input;
+            this.cursorPos++;
+        }
+        this.updateDisplay();
+    }
+
+    // Navigation
+    backspace() {
+        if (this.cursorPos > 0) {
+            this.input = this.input.slice(0, this.cursorPos - 1) + this.input.slice(this.cursorPos);
+            this.cursorPos--;
+            if (this.input === '' || this.input === '-') {
+                this.input = '0';
+                this.cursorPos = 1;
+            }
+            this.updateDisplay();
+        }
+    }
+
+    moveCursor(direction) {
+        if (direction === 'left') {
+            this.cursorPos = Math.max(0, this.cursorPos - 1);
+        } else {
+            this.cursorPos = Math.min(this.input.length, this.cursorPos + 1);
+        }
+        this.updateDisplay();
+    }
+
+    // Operations
+    chooseOperation(op) {
+        if (this.input === 'Error') this.clearError();
+
+        const constants = ['π', 'pi', 'e'];
+        const unaryOps = ['sin', 'cos', 'tan', 'sqrt', 'exp', 'log', 'log10', 'ln', 'factorial'];
+
+        if (constants.includes(op)) {
+            this.insertConstant(op);
+            return;
+        }
+
+        if (unaryOps.includes(op)) {
+            this.performUnaryOperation(op);
+            return;
+        }
+
+        if (!this.input || this.input === '-') return;
+
+        if (this.operation && this.previous !== '') {
+            this.expression = `${this.previous} ${op}`;
+            this.operation = op;
+            this.updateDisplay();
+            return;
+        }
+
+        this.expression = `${this.input} ${op}`;
+        this.operation = op;
+        this.previous = this.input;
+        this.input = '0';
+        this.cursorPos = 1;
+        this.updateDisplay();
+    }
+
+    performUnaryOperation(op) {
+        const isBinary = this.isBinaryMode();
+        const curr = isBinary ? parseInt(this.input, 2) : parseFloat(this.input);
+
+        const operations = {
+            sin: () => Math.sin(curr * (Math.PI / 180)),
+            cos: () => Math.cos(curr * (Math.PI / 180)),
+            tan: () => Math.tan(curr * (Math.PI / 180)),
+            sqrt: () => Math.sqrt(curr),
+            exp: () => Math.exp(curr),
+            log: () => Math.log(curr),
+            log10: () => Math.log10(curr),
+            ln: () => Math.log(curr),
+            factorial: () => this.factorial(curr)
+        };
+
+        const result = operations[op]?.();
+        if (result === undefined) return;
+
+        if (op === 'factorial' && (curr < 0 || !Number.isInteger(curr))) {
+            this.setError();
+            return;
+        }
+
+        if (isNaN(result) || !isFinite(result)) {
+            this.setError();
+            return;
+        }
+
+        this.input = isBinary ? Math.floor(result).toString(2) : result.toString();
+        this.cursorPos = this.input.length;
+        this.updateDisplay();
+    }
+
+    calculate() {
+        if (this.hasComplexExpression()) {
+            this.evaluateComplexExpression();
+        } else {
+            this.evaluateBasicOperation();
+        }
+    }
+
+    hasComplexExpression() {
+        const complexIndicators = ['(', 'sin', 'cos', 'tan', 'sqrt', 'log', 'exp', 'ln', 'factorial'];
+        return complexIndicators.some(indicator => this.input.includes(indicator));
+    }
+
+    evaluateComplexExpression() {
+        const result = this.evaluateExpression(this.input);
+
+        if (isNaN(result) || !isFinite(result)) {
+            this.setError();
+            return;
+        }
+
+        const isBinary = this.isBinaryMode();
+        this.input = isBinary ? Math.floor(result).toString(2) : result.toString();
+        this.cursorPos = this.input.length;
+        this.resetOperation();
+        this.updateDisplay();
+    }
+
+    evaluateBasicOperation() {
+        if (!this.operation || this.previous === '' || this.input === '-') return;
+
+        const isBinary = this.isBinaryMode();
+        const prev = isBinary ? parseInt(this.previous, 2) : parseFloat(this.previous);
+        const curr = isBinary ? parseInt(this.input, 2) : parseFloat(this.input);
+
+        const operations = {
+            '+': (a, b) => a + b,
+            '-': (a, b) => a - b,
+            '*': (a, b) => a * b,
+            '/': (a, b) => b === 0 ? NaN : a / b,
+            '%': (a, b) => a % b,
+            '^': (a, b) => Math.pow(a, b),
+            '**': (a, b) => Math.pow(a, b)
+        };
+
+        const result = operations[this.operation]?.(prev, curr);
+        if (result === undefined) return;
+
+        if (isNaN(result) || !isFinite(result)) {
+            this.setError();
+            return;
+        }
+
+        this.expression = `${this.previous} ${this.operation} ${this.input}`;
+        this.input = isBinary ? this.formatBinaryResult(result) : result.toString();
+        this.cursorPos = this.input.length;
+        this.resetOperation();
+        this.updateDisplay();
+    }
+
+    // Utility methods
+    isBinaryMode() {
+        return document.getElementById('binary')?.checked;
+    }
+
+    isUnitsMode() {
+        return document.getElementById('units')?.checked;
+    }
+
+    clearError() {
+        this.input = '0';
+        this.cursorPos = 1;
+    }
+
+    setError() {
+        this.input = 'Error';
+        this.cursorPos = 5;
+        this.resetOperation();
+    }
+
+    resetOperation() {
+        this.operation = undefined;
+        this.previous = '';
+        this.expression = '';
+    }
+
+    insertAtCursor(text) {
+        return this.input.slice(0, this.cursorPos) + text + this.input.slice(this.cursorPos);
+    }
+
+    formatBinaryResult(result) {
+        const binaryResult = Math.floor(result).toString(2);
+        const maxInputLength = Math.max(this.previous.length, this.input.length);
+        const minBitWidth = Math.max(4, maxInputLength);
+        return binaryResult.padStart(minBitWidth, '0');
+    }
+
+    factorial(n) {
+        if (n < 0 || !Number.isInteger(n)) return NaN;
+        if (n === 0 || n === 1) return 1;
+        let result = 1;
+        for (let i = 2; i <= n; i++) {
+            result *= i;
+        }
+        return result;
+    }
+
+    evaluateExpression(expr) {
+        try {
+            // Replace mathematical functions with JavaScript equivalents
+            const replacements = {
+                'sin(': 'Math.sin(',
+                'cos(': 'Math.cos(',
+                'tan(': 'Math.tan(',
+                'sqrt(': 'Math.sqrt(',
+                'exp(': 'Math.exp(',
+                'log(': 'Math.log(',
+                'log10(': 'Math.log10(',
+                'ln(': 'Math.log(',
+                'factorial(': 'this.factorial(',
+                'π': 'Math.PI',
+                '^': '**'
+            };
+
+            Object.entries(replacements).forEach(([find, replace]) => {
+                expr = expr.replace(new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), replace);
+            });
+
+            // Convert degrees to radians for trig functions
+            expr = expr.replace(/Math\.(sin|cos|tan)\(([^)]+)\)/g, (match, func, angle) => {
+                return `Math.${func}((${angle}) * Math.PI / 180)`;
+            });
+
+            // Handle factorial function calls
+            expr = expr.replace(/this\.factorial\(([^)]+)\)/g, (match, num) => {
+                return this.factorial(parseFloat(num));
+            });
+
+            return eval(expr);
+        } catch (error) {
+            return NaN;
+        }
+    }
+
+    // Display methods
+    formatNumber(num) {
+        if (num === 'Error' || this.isBinaryMode() || this.hasComplexContent(num)) {
+            return num;
+        }
+
+        const numValue = parseFloat(num);
+        if (isNaN(numValue)) return num;
+
+        if (Number.isInteger(numValue) && Math.abs(numValue) >= 1000) {
+            return numValue.toLocaleString();
+        }
+
+        return num;
+    }
+
+    hasComplexContent(num) {
+        const complexIndicators = ['(', 'sin', 'cos', 'tan', 'sqrt', 'log', 'exp', 'ln', 'factorial'];
+        return complexIndicators.some(indicator => num.includes(indicator));
+    }
+
+    updateDisplay() {
+        this.expressionEl.textContent = this.expression;
+        this.inputEl.textContent = this.formatNumber(this.input);
+        this.updateCursorPosition();
+    }
+
+    updateCursorPosition() {
+        if (!this.cursorEl) return;
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        context.font = '24px Courier New';
+
+        const displayInput = this.formatNumber(this.input);
+        const displayCursorPos = this.rawToDisplayPosition(this.cursorPos);
+        const textAfterCursor = displayInput.substring(displayCursorPos);
+        const textWidth = context.measureText(textAfterCursor).width;
+
+        this.cursorEl.style.right = textWidth + 'px';
+        this.cursorEl.style.left = 'auto';
+    }
+
+    rawToDisplayPosition(rawPos) {
+        if (!this.input || this.isBinaryMode() || this.hasComplexContent(this.input)) {
+            return rawPos;
+        }
+
+        let commasBeforeCursor = 0;
+        const numStr = this.input.replace(/[^0-9.]/g, '');
+
+        if (numStr && !numStr.includes('.') && Math.abs(parseFloat(numStr)) >= 1000) {
+            for (let i = 0; i < rawPos && i < numStr.length; i++) {
+                const digitsFromRight = numStr.length - i - 1;
+                if (digitsFromRight > 0 && digitsFromRight % 3 === 0) {
+                    commasBeforeCursor++;
+                }
+            }
+        }
+
+        return rawPos + commasBeforeCursor;
+    }
+
+    displayToRawPosition(displayPos) {
+        if (!this.input || this.isBinaryMode() || this.hasComplexContent(this.input)) {
+            return displayPos;
+        }
+
+        let rawPos = 0;
+        let currentDisplayPos = 0;
+
+        for (let i = 0; i < this.input.length && currentDisplayPos < displayPos; i++) {
+            if (currentDisplayPos === displayPos) break;
+            currentDisplayPos++;
+            rawPos++;
+
+            const numStr = this.input.replace(/[^0-9.]/g, '');
+            if (numStr && !numStr.includes('.') && Math.abs(parseFloat(numStr)) >= 1000) {
+                const digitsFromRight = numStr.length - rawPos;
+                if (digitsFromRight > 0 && digitsFromRight % 3 === 0 && rawPos < this.input.length) {
+                    currentDisplayPos++;
+                }
+            }
+        }
+
+        return Math.min(rawPos, this.input.length);
+    }
+
+    attachClickCursorPositioning() {
+        this.inputEl.addEventListener('click', (e) => {
+            const rect = this.inputEl.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            context.font = '24px Courier New';
+
+            const displayInput = this.formatNumber(this.input);
+            let bestDisplayPos = 0;
+            let minDistance = Infinity;
+
+            for (let i = 0; i <= displayInput.length; i++) {
+                const textBeforeCursor = displayInput.substring(0, i);
+                const textWidth = context.measureText(textBeforeCursor).width;
+                const distance = Math.abs(clickX - textWidth);
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    bestDisplayPos = i;
+                }
+            }
+
+            this.cursorPos = this.displayToRawPosition(bestDisplayPos);
+            this.updateDisplay();
+        });
+    }
+
+    // Event binding
+    bindEvents() {
+        // Button events
+        const eventMappings = [
+            ['[data-number]', 'click', (btn) => this.appendDigit(btn.dataset.number)],
+            ['[data-operation]', 'click', (btn) => this.chooseOperation(btn.dataset.operation)],
+            ['[data-function]', 'click', (btn) => this.appendFunction(btn.dataset.function)],
+            ['[data-constant]', 'click', (btn) => this.insertConstant(btn.dataset.constant)],
+            ['[data-equals]', 'click', () => this.calculate()],
+            ['[data-all-clear]', 'click', () => this.clearAll()],
+            ['[data-clear-entry]', 'click', () => this.clearEntry()],
+            ['[data-delete]', 'click', () => this.backspace()],
+            ['[data-sign]', 'click', () => this.toggleSign()]
+        ];
+
+        eventMappings.forEach(([selector, event, handler]) => {
+            document.querySelectorAll(selector).forEach(element => {
+                element.addEventListener(event, () => handler(element));
+            });
+        });
+
+        // Keyboard events - FIXED: Only prevent default when not in units mode
+        document.addEventListener('keydown', (e) => {
+            // Don't intercept keyboard input when units mode is active
+            if (this.isUnitsMode()) {
+                return; // Allow normal typing in input fields
+            }
+
+            // Don't intercept if user is typing in an input field
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            e.preventDefault();
+            this.handleKeyboardInput(e);
+        });
+    }
+
+    handleKeyboardInput(e) {
+        const keyMappings = {
+            digit: () => e.key >= '0' && e.key <= '9' && this.appendDigit(e.key),
+            decimal: () => e.key === '.' && this.appendDigit('.'),
+            parentheses: () => ['(', ')'].includes(e.key) && this.appendFunction(e.key),
+            operations: () => ['+', '-', '*', '/', '%', '^'].includes(e.key) && this.chooseOperation(e.key),
+            equals: () => ['Enter', '='].includes(e.key) && this.calculate(),
+            clear: () => e.key === 'Escape' && this.clearAll(),
+            backspace: () => ['Backspace', 'Delete'].includes(e.key) && this.backspace(),
+            navigation: () => {
+                if (e.key === 'ArrowLeft') this.moveCursor('left');
+                if (e.key === 'ArrowRight') this.moveCursor('right');
+            }
+        };
+
+        Object.values(keyMappings).forEach(handler => handler());
+    }
 }
 
-function setupTemperatureConverter() {
-    const elements = ['temp-input', 'temp-from', 'temp-to'].map(id =>
-        document.getElementById(id)
-    ).filter(Boolean);
-
-    elements.forEach(element => {
-        element.addEventListener('input', convertTemperature);
-        element.addEventListener('change', convertTemperature);
-    });
-}
-
-function convertTemperature() {
-    const input = document.getElementById('temp-input');
-    const from = document.getElementById('temp-from');
-    const to = document.getElementById('temp-to');
-    const result = document.getElementById('temp-result');
-
-    if (!input || !from || !to || !result) return;
-
-    const value = parseFloat(input.value);
-    if (isNaN(value) || input.value === '') {
-        result.textContent = '0';
-        return;
+// =======================
+// UNITS CONVERTER CLASS
+// =======================
+class UnitsConverter {
+    constructor() {
+        // console.log('UnitsConverter constructor called!');
+        this.rates = {
+            length: {
+                mm: 0.001, cm: 0.01, dm: 0.1, m: 1, dam: 10, hm: 100, km: 1000,
+                in: 0.0254, ft: 0.3048, yd: 0.9144, mi: 1609.344
+            },
+            mass: {
+                mg: 0.001, cg: 0.01, dg: 0.1, g: 1, dag: 10, hg: 100, kg: 1000, ton: 1000000,
+                gr: 0.06479891, oz: 28.3495, lb: 453.59237, st: 6350.29318,
+                tonUS: 907184.74, tonUK: 1016046.91
+            },
+            volume: {
+                ml: 0.001, cl: 0.01, dl: 0.1, l: 1, dal: 10, hl: 100, cubic: 1000,
+                drop: 0.00005, "fl oz": 0.0295735, shot: 0.044, cup: 0.237,
+                ptUS: 0.473176, ptUk: 0.568261, qtUS: 0.946353, qtUK: 1.13652,
+                galUS: 3.78541, galUK: 4.54609
+            }
+        };
+        this.sections = ['length', 'mass', 'temp', 'volume', 'binary'];
+        this.init();
     }
 
-    let celsius;
-    switch (from.value) {
-        case 'F': celsius = (value - 32) * 5 / 9; break;
-        case 'K': celsius = value - 273.15; break;
-        default: celsius = value; break;
+    init() {
+        // console.log('UnitsConverter init called!')
+        this.setupRadioSwitching();
+        this.setupConverters();
+        this.setupReverseButtons();
+        this.setupResetButtons();
     }
 
-    let finalResult;
-    switch (to.value) {
-        case 'F': finalResult = celsius * 9 / 5 + 32; break;
-        case 'K': finalResult = celsius + 273.15; break;
-        default: finalResult = celsius; break;
+    setupRadioSwitching() {
+        document.querySelectorAll('input[name="unit-type"]').forEach(radio => {
+            radio.addEventListener('change', e => this.showSection(e.target.value));
+        });
     }
 
-    result.textContent = finalResult.toFixed(2);
-}
+    setupConverters() {
+        ['length', 'mass', 'volume'].forEach(type => this.setupBasicConverter(type));
+        this.setupTemperatureConverter();
+        this.setupBinaryConverter();
+    }
 
-function setupBinaryConverter() {
-    const input = document.getElementById('binary-input');
-    const from = document.getElementById('binary-from');
-    const to = document.getElementById('binary-to');
-    const result = document.getElementById('binary-result');
+    setupReverseButtons() {
+        // Setup reverse buttons using data-type attribute
+        document.querySelectorAll('.reverse-btn[data-type]').forEach(btn => {
+            const type = btn.dataset.type;
+            btn.addEventListener('click', () => this.reverseUnits(type));
+        });
+    }
 
-    if (!input || !from || !to || !result) return;
+    reverseUnits(type) {
+        const fromSelect = document.getElementById(`${type}-from`);
+        const toSelect = document.getElementById(`${type}-to`);
 
-    function convertBinary() {
-        const value = input.value.trim();
-        if (value === '') {
-            result.textContent = '0';
+        // Swap the values
+        [fromSelect.value, toSelect.value] = [toSelect.value, fromSelect.value];
+
+        // Trigger conversion based on type
+        if (type === 'temp') {
+            this.convertTemp();
+        } else if (type === 'binary') {
+            this.convertBinary();
+        } else {
+            // For length, mass, volume - trigger the input event
+            const inputId = this.getInputId(type);
+            const input = document.getElementById(inputId);
+            if (input && input.value) {
+                input.dispatchEvent(new Event('input'));
+            }
+        }
+    }
+
+    getInputId(type) {
+        const inputMap = {
+            'length': 'length-input',
+            'mass': 'mass-input',
+            'volume': 'volume-input'
+        };
+        return inputMap[type];
+    }
+
+    showSection(type) {
+        document.querySelectorAll('#units-calc .converter-section').forEach((section, i) => {
+            section.style.display = this.sections[i] === type ? 'block' : 'none';
+        });
+    }
+
+    setupBasicConverter(type) {
+        const convert = () => {
+            const val = +document.getElementById(`${type}-input`).value;
+            const from = document.getElementById(`${type}-from`).value;
+            const to = document.getElementById(`${type}-to`).value;
+
+            if (!val) {
+                document.getElementById(`${type}-result`).textContent = '0';
+                return;
+            }
+
+            const result = (val * this.rates[type][from]) / this.rates[type][to];
+            document.getElementById(`${type}-result`).textContent = this.formatResult(result);
+        };
+
+        [`${type}-input`, `${type}-from`, `${type}-to`].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', convert);
+        });
+    }
+
+    setupTemperatureConverter() {
+        const elements = ['temp-input', 'temp-from', 'temp-to'];
+        elements.forEach(id => {
+            document.getElementById(id)?.addEventListener('input', () => this.convertTemp());
+        });
+    }
+
+    setupBinaryConverter() {
+        const elements = ['binary-input', 'binary-from', 'binary-to'];
+        elements.forEach(id => {
+            document.getElementById(id)?.addEventListener('input', () => this.convertBinary());
+        });
+    }
+
+    convertTemp() {
+        const val = +document.getElementById('temp-input').value;
+        const from = document.getElementById('temp-from').value;
+        const to = document.getElementById('temp-to').value;
+
+        if (!val && val !== 0) {
+            document.getElementById('temp-result').textContent = '0';
+            return;
+        }
+
+        // Convert to Celsius first
+        const toCelsius = {
+            C: (temp) => temp,
+            F: (temp) => (temp - 32) * 5 / 9,
+            K: (temp) => temp - 273.15
+        };
+
+        // Convert from Celsius to target
+        const fromCelsius = {
+            C: (temp) => temp,
+            F: (temp) => temp * 9 / 5 + 32,
+            K: (temp) => temp + 273.15
+        };
+
+        const celsius = toCelsius[from](val);
+        const result = fromCelsius[to](celsius);
+
+        document.getElementById('temp-result').textContent = result.toFixed(2);
+    }
+
+    convertBinary() {
+        const val = document.getElementById('binary-input').value.trim();
+        const from = document.getElementById('binary-from').value;
+        const to = document.getElementById('binary-to').value;
+
+        if (!val) {
+            document.getElementById('binary-result').textContent = '0';
             return;
         }
 
         try {
-            let decimalValue;
-
-            if (from.value === 'binary') {
-                if (!/^[01]+$/.test(value)) {
-                    result.textContent = 'Invalid';
-                    return;
-                }
-                decimalValue = parseInt(value, 2);
-            } else {
-                decimalValue = parseInt(value);
-                if (isNaN(decimalValue) || decimalValue < 0) {
-                    result.textContent = 'Invalid';
-                    return;
-                }
-            }
-
-            if (to.value === 'binary') {
-                result.textContent = decimalValue.toString(2);
-            } else {
-                result.textContent = decimalValue.toString();
-            }
-        } catch (error) {
-            result.textContent = 'Invalid';
+            const bases = { bin: 2, dec: 10, hex: 16 };
+            const decimal = parseInt(val, bases[from]);
+            const result = decimal.toString(bases[to]);
+            document.getElementById('binary-result').textContent = to === 'hex' ? result.toUpperCase() : result;
+        } catch {
+            document.getElementById('binary-result').textContent = 'Error';
         }
     }
 
-    [input, from, to].forEach(element => {
-        element.addEventListener('input', convertBinary);
-        element.addEventListener('change', convertBinary);
-    });
-}
-
-function addResetButtons() {
-    const resetButtons = document.querySelectorAll('.reset-btn');
-
-    resetButtons.forEach(button => {
-        const container = button.closest('.converter-section') || button.parentElement;
-        let converterType = '';
-
-        if (container.querySelector('#length-input')) {
-            converterType = 'length';
-        } else if (container.querySelector('#weight-input')) {
-            converterType = 'weight';
-        } else if (container.querySelector('#temp-input')) {
-            converterType = 'temp';
-        } else if (container.querySelector('#binary-input')) {
-            converterType = 'binary';
+    formatResult(val) {
+        const absVal = Math.abs(val);
+        if (absVal >= 1000000 || (absVal < 0.001 && val !== 0)) {
+            return val.toExponential(3);
         }
-
-        if (converterType) {
-            button.addEventListener('click', () => resetConverter(converterType));
-        }
-    });
-}
-
-function resetConverter(type) {
-    const input = document.getElementById(`${type}-input`);
-    const result = document.getElementById(`${type}-result`);
-
-    if (input) {
-        input.value = '';
-        input.dispatchEvent(new Event('input'));
+        return val.toFixed(val % 1 === 0 ? 0 : 3);
     }
 
-    if (result) {
-        result.textContent = '0';
+    setupResetButtons() {
+        // Debug: Check if we can find the buttons
+        // console.log('Looking for reset buttons...');
+        const resetButtons = document.querySelectorAll('.reset-btn');
+        // console.log('Found reset buttons:', resetButtons.length);
+
+        const resetButtonsWithAction = document.querySelectorAll('.reset-btn[data-action="clear"]');
+        // console.log('Found reset buttons with data-action:', resetButtonsWithAction.length);
+
+        // Try both approaches
+        resetButtons.forEach((btn, index) => {
+            // console.log(`Reset button ${index}:`, btn);
+            btn.addEventListener('click', () => {
+                console.log('Reset button clicked!');
+                this.clearAll();
+            });
+        });
     }
+
+    clearAll() {
+        const selectors = [
+            '#units-calc input[type="number"]',
+            '#units-calc input[type="text"]'
+        ];
+
+        selectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(input => input.value = '');
+        });
+
+        document.querySelectorAll('#units-calc [id$="result"]').forEach(span => {
+            span.textContent = '0';
+        });
+    }
+
 }
 
-function formatResult(number) {
-    return parseFloat(number.toFixed(6)).toString();
-}
-
-// Reset functions for converters
-function resetLengthConverter() {
-    resetConverter('length');
-}
-
-function resetWeightConverter() {
-    resetConverter('weight');
-}
-
-function resetTempConverter() {
-    resetConverter('temp');
-}
-
-function resetBinaryConverter() {
-    resetConverter('binary');
-}
-
-// ===== INITIALIZATION =====
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-        initializeCalculator();
-        setupEventListeners();
-        setupConverters();
-        updateDisplay();
-    });
-} else {
-    initializeCalculator();
-    setupEventListeners();
-    setupConverters();
-    updateDisplay();
-}
+// =======================
+// INITIALIZATION
+// =======================
+// window.unitsConverter = new UnitsConverter();
+document.addEventListener('DOMContentLoaded', () => {
+    new CalculatorManager();
+    // new UnitsConverter();
+});
