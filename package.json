@@ -1,0 +1,27 @@
+{
+  "name": "4-in-1_calculator",
+  "version": "2.0.0",
+  "description": "A modern, responsive web-based calculator that combines Classic, Scientific, Binary, and Unit Conversion modes into a single intuitive interface. Built with JavaScript, HTML, and CSS, this project is ideal for educational use, productivity, or as a UI/UX showcase.",
+  "author": {
+    "name": "Bazzomir",
+    "email": "bazzomir97@gmail.com",
+    "year": "2025"
+  },
+  "main": "index.html",
+  "private": true,
+  "scripts": {
+    "build": "echo 'No build needed'",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d source"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bazzomir/calculator.git"
+  },
+  "license": "MIT",
+  "keywords": ["calculator", "classic", "scientific", "binary", "units conversion", "JavaScript", "HTML", "CSS, 4-in-1"],
+  "bugs": {
+    "url": "https://github.com/Bazzomir/calculator/issues"
+  },
+  "homepage": ""
+}
