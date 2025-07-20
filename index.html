@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4-in-1 Calculator</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
+    <script src="script.js" defer></script>
+</head>
+
+<body>
+    <div class="calculator-container">
+        <!-- Calculator Mode Selector -->
+        <div class="calc-selector">
+            <input type="radio" id="classic" name="calc-type" value="classic" checked>
+            <label for="classic">Classic</label>
+
+            <input type="radio" id="scientific" name="calc-type" value="scientific">
+            <label for="scientific">Scientific</label>
+
+            <input type="radio" id="binary" name="calc-type" value="binary">
+            <label for="binary">Binary</label>
+
+            <input type="radio" id="units" name="calc-type" value="units">
+            <label for="units">Units</label>
+        </div>
+
+        <!-- Display -->
+        <div class="display" id="display">
+            <div class="display-top" id="expression" aria-label="Current expression"></div>
+            <div class="display-bottom" id="result" aria-label="Current input">
+                <span id="current-input">0</span>
+                <span class="cursor" id="cursor"></span>
+            </div>
+        </div>
+
+
+        <!-- Classic Calculator -->
+        <div id="classic-calc" class="buttons classic-buttons">
+            <button class="btn clear" data-all-clear aria-label="Clear all">C</button>
+            <button class="btn clear" data-clear-entry aria-label="Clear current entry">CE</button>
+            <button class="btn" data-delete aria-label="Backspace">⌫</button>
+            <button class="btn operator" data-operation="/" aria-label="Divide">/</button>
+
+            <button class="btn" data-number="7" aria-label="7">7</button>
+            <button class="btn" data-number="8" aria-label="8">8</button>
+            <button class="btn" data-number="9" aria-label="9">9</button>
+            <button class="btn operator" data-operation="*" aria-label="Multiply">×</button>
+
+            <button class="btn" data-number="4" aria-label="4">4</button>
+            <button class="btn" data-number="5" aria-label="5">5</button>
+            <button class="btn" data-number="6" aria-label="6">6</button>
+            <button class="btn operator" data-operation="-" aria-label="Subtract">-</button>
+
+            <button class="btn" data-number="1" aria-label="1">1</button>
+            <button class="btn" data-number="2" aria-label="2">2</button>
+            <button class="btn" data-number="3" aria-label="3">3</button>
+            <button class="btn operator" data-operation="+" aria-label="Add">+</button>
+
+            <button class="btn" data-number="0" aria-label="0">0</button>
+            <button class="btn" data-number="00" aria-label="Double zero">00</button>
+            <button class="btn" data-number="." aria-label="Decimal point">.</button>
+            <button class="btn equals" data-equals aria-label="Equals">=</button>
+
+        </div>
+
+        <!-- Scientific Calculator -->
+        <div id="scientific-calc" class="buttons scientific-buttons hidden">
+            <button class="btn clear" data-all-clear aria-label="Clear all">C</button>
+            <button class="btn clear" data-clear-entry aria-label="Clear current entry">CE</button>
+            <button class="btn" data-delete aria-label="Backspace">⌫</button>
+            <button class="btn function" data-function="(" aria-label="Open parenthesis">(</button>
+            <button class="btn function" data-function=")" aria-label="Close parenthesis">)</button>
+
+            <button class="btn function" data-function="sin(" aria-label="Sine">sin</button>
+            <button class="btn function" data-function="cos(" aria-label="Cosine">cos</button>
+            <button class="btn function" data-function="tan(" aria-label="Tangent">tan</button>
+            <button class="btn function" data-function="log(" aria-label="Logarithm (base e)">log</button>
+            <button class="btn function" data-function="log10(" aria-label="Logarithm (base 10)">log10</button>
+
+            <button class="btn function" data-constant="π" aria-label="Pi constant">π</button>
+            <button class="btn function" data-constant="e" aria-label="Euler's number">e</button>
+            <button class="btn operator" data-operation="%" aria-label="Modulus">%</button>
+            <button class="btn operator" data-operation="^" aria-label="Exponentiation">x^y</button>
+            <button class="btn function" data-function="sqrt(" aria-label="Square root">√</button>
+
+            <button class="btn" data-number="7" aria-label="7">7</button>
+            <button class="btn" data-number="8" aria-label="8">8</button>
+            <button class="btn" data-number="9" aria-label="9">9</button>
+            <button class="btn operator" data-operation="/" aria-label="Divide">/</button>
+            <button class="btn function" data-function="exp(" aria-label="Exponential">exp</button>
+
+            <button class="btn" data-number="4" aria-label="4">4</button>
+            <button class="btn" data-number="5" aria-label="5">5</button>
+            <button class="btn" data-number="6" aria-label="6">6</button>
+            <button class="btn operator" data-operation="*" aria-label="Multiply">×</button>
+            <button class="btn function" data-function="ln(" aria-label="Natural log">ln</button>
+
+            <button class="btn" data-number="1" aria-label="1">1</button>
+            <button class="btn" data-number="2" aria-label="2">2</button>
+            <button class="btn" data-number="3" aria-label="3">3</button>
+            <button class="btn operator" data-operation="-" aria-label="Subtract">-</button>
+            <button class="btn function" data-function="factorial(" aria-label="Factorial">n!</button>
+
+            <button class="btn" data-number="0" aria-label="0">0</button>
+            <button class="btn" data-number="00" aria-label="Double zero">00</button>
+            <button class="btn" data-number="." aria-label="Decimal point">.</button>
+            <button class="btn operator" data-operation="+" aria-label="Add">+</button>
+            <button class="btn equals" data-equals aria-label="Equals">=</button>
+        </div>
+
+
+        <div id="units-calc" class="unit-converter hidden">
+            <!-- Units mode selector -->
+            <div class="unit-selector">
+                <input type="radio" id="unit-length" name="unit-type" value="length" checked>
+                <label for="unit-length">Length</label>
+
+                <input type="radio" id="unit-mass" name="unit-type" value="mass">
+                <label for="unit-mass">Mass</label>
+
+                <input type="radio" id="unit-temp" name="unit-type" value="temp">
+                <label for="unit-temp">Temperature</label>
+
+                <input type="radio" id="unit-volume" name="unit-type" value="volume">
+                <label for="unit-volume">Volume</label>
+
+                <input type="radio" id="unit-binary" name="unit-type" value="binary">
+                <label for="unit-binary">Binary</label>
+            </div>
+
+            <!-- Length -->
+            <div class="converter-section">
+                <h3>Length Conversion</h3>
+                <div class="converter-row">
+                    <select id="length-from">
+                        <option value="mm">Millimeter (mm)</option>
+                        <option value="cm">Centimeter (cm)</option>
+                        <option value="dm">Decimeter (dm)</option>
+                        <option value="m">Meter (m)</option>
+                        <option value="dam">Decameter (dam)</option>
+                        <option value="hm">Hectometer (hm)</option>
+                        <option value="km">Kilometer (km)</option>
+                        <option value="in">Inch (inch)</option>
+                        <option value="ft">Feet (ft)</option>
+                        <option value="yd">Yard (yd)</option>
+                        <option value="mi">Mile (ml)</option>
+                    </select>
+                    <!-- <span>to</span> -->
+                    <button class="reverse-btn" data-type="length" title="Reverse units">⇄</button>
+                    <select id="length-to">
+                        <option value="mm">Millimeter (mm)</option>
+                        <option value="cm">Centimeter (cm)</option>
+                        <option value="dm">Decimeter (dm)</option>
+                        <option value="m">Meter (m)</option>
+                        <option value="dam">Decameter (dam)</option>
+                        <option value="hm">Hectometer (hm)</option>
+                        <option value="km">Kilometer (km)</option>
+                        <option value="in">Inch (inch)</option>
+                        <option value="ft">Feet (ft)</option>
+                        <option value="yd">Yard (yd)</option>
+                        <option value="mi">Mile (ml)</option>
+                    </select>
+                    <input type="number" id="length-input" placeholder="Enter value">
+                    <!-- <button onclick="clearAll()" class="reset-btn">Reset</button> -->
+                    <button class="reset-btn" data-action="clear">Reset</button>
+                </div>
+                <div class="converter-row">
+                    <strong>Result: <span id="length-result">0</span></strong>
+                </div>
+            </div>
+
+            <!-- Mass -->
+            <div class="converter-section">
+                <h3>Mass Conversion</h3>
+                <div class="converter-row">
+                    <select id="mass-from">
+                        <option value="mg">Milligram (mg)</option>
+                        <option value="cg">Centigram (cg)</option>
+                        <option value="dg">Decigram (dg)</option>
+                        <option value="g">Gram (g)</option>
+                        <option value="dag">Decagram (dag)</option>
+                        <option value="hg">Hectogram (hg)</option>
+                        <option value="kg">Kilogram (kg)</option>
+                        <option value="ton">Ton (t)</option>
+                        <option value="gr">Grain (gr)</option>
+                        <option value="oz">Ounce (oz)</option>
+                        <option value="lb">Pound (lb)</option>
+                        <option value="st">Stone (st)</option>
+                        <option value="tonUS">Ton (t) - US</option>
+                        <option value="tonUK">Ton (t) - UK</option>
+                    </select>
+                    <!-- <span>to</span> -->
+                    <button class="reverse-btn" data-type="mass" title="Reverse units">⇄</button>
+                    <select id="mass-to">
+                        <option value="mg">Milligram (mg)</option>
+                        <option value="cg">Centigram (cg)</option>
+                        <option value="dg">Decigram (dg)</option>
+                        <option value="g">Gram (g)</option>
+                        <option value="dag">Decagram (dag)</option>
+                        <option value="hg">Hectogram (hg)</option>
+                        <option value="kg">Kilogram (kg)</option>
+                        <option value="ton">Ton (t)</option>
+                        <option value="gr">Grain (gr)</option>
+                        <option value="oz">Ounce (oz)</option>
+                        <option value="lb">Pound (lb)</option>
+                        <option value="st">Stone (st)</option>
+                        <option value="tonUS">Ton (t) - US</option>
+                        <option value="tonUK">Ton (t) - UK</option>
+                    </select>
+                    <input type="number" id="mass-input" placeholder="Enter value">
+                    <!-- <button onclick="clearAll()" class="reset-btn">Reset</button> -->
+                    <button class="reset-btn" data-action="clear">Reset</button>
+                </div>
+                <div class="converter-row">
+                    <strong>Result: <span id="mass-result">0</span></strong>
+                </div>
+            </div>
+
+            <!-- Temperature -->
+            <div class="converter-section">
+                <h3>Temperature Conversion</h3>
+                <div class="converter-row">
+                    <select id="temp-from">
+                        <option value="C">Celsius (°C)</option>
+                        <option value="F">Fahrenheit (°F)</option>
+                        <option value="K">Kelvin (°K)</option>
+                    </select>
+                    <!-- <span>to</span> -->
+                    <button class="reverse-btn" data-type="temp" title="Reverse units">⇄</button>
+                    <select id="temp-to">
+                        <option value="C">Celsius (°C)</option>
+                        <option value="F">Fahrenheit (°F)</option>
+                        <option value="K">Kelvin (°K)</option>
+                    </select>
+                    <input type="number" id="temp-input" placeholder="Enter temperature">
+                    <!-- <button onclick="clearAll()" class="reset-btn">Reset</button> -->
+                    <button class="reset-btn" data-action="clear">Reset</button>
+                </div>
+                <div class="converter-row">
+                    <strong>Result: <span id="temp-result">0</span></strong>
+                </div>
+            </div>
+
+            <!-- Volume -->
+            <div class="converter-section">
+                <h3>Volume Conversion</h3>
+                <div class="converter-row">
+                    <select id="volume-from">
+                        <option value="ml">Milliliter (ml)</option>
+                        <option value="cl">Centiliter (cl)</option>
+                        <option value="dl">Deciliter (dl)</option>
+                        <option value="l">Liter (l)</option>
+                        <option value="dal">Decaliter (dal)</option>
+                        <option value="hl">Hectoliter (hl)</option>
+                        <option value="cubic">Cubic Meter (m³)</option>
+                        <option value="drop">Drop</option>
+                        <option value="fl oz">Fluid Ounce (fl oz)</option>
+                        <option value="shot">Jigger/Shot</option>
+                        <option value="cup">Cup</option>
+                        <option value="ptUS">Pint (pt) - US</option>
+                        <option value="ptUk">Pint (pt) - UK</option>
+                        <option value="qtUS">Quart (qt) - US</option>
+                        <option value="qtUK">Quart (qt) - UK</option>
+                        <option value="galUS">Gallon (gal) - US</option>
+                        <option value="galUK">Gallon (gal) - UK</option>
+                    </select>
+                    <!-- <span>to</span> -->
+                    <button class="reverse-btn" data-type="volume" title="Reverse units">⇄</button>
+                    <select id="volume-to">
+                        <option value="ml">Milliliter (ml)</option>
+                        <option value="cl">Centiliter (cl)</option>
+                        <option value="dl">Deciliter (dl)</option>
+                        <option value="l">Liter (l)</option>
+                        <option value="dal">Decaliter (dal)</option>
+                        <option value="hl">Hectoliter (hl)</option>
+                        <option value="cubic">Cubic Meter (m³)</option>
+                        <option value="drop">Drop</option>
+                        <option value="fl oz">Fluid Ounce (fl oz)</option>
+                        <option value="shot">Jigger/Shot</option>
+                        <option value="cup">Cup</option>
+                        <option value="ptUS">Pint (pt) - US</option>
+                        <option value="ptUk">Pint (pt) - UK</option>
+                        <option value="qtUS">Quart (qt) - US</option>
+                        <option value="qtUK">Quart (qt) - UK</option>
+                        <option value="galUS">Gallon (gal) - US</option>
+                        <option value="galUK">Gallon (gal) - UK</option>
+                    </select>
+                    <input type="number" id="volume-input" placeholder="Enter value">
+                    <!-- <button onclick="clearAll()" class="reset-btn">Reset</button> -->
+                    <button class="reset-btn" data-action="clear">Reset</button>
+                </div>
+                <div class="converter-row">
+                    <strong>Result: <span id="volume-result">0</span></strong>
+                </div>
+            </div>
+
+            <!-- Binary -->
+            <div class="converter-section">
+                <h3>Binary Conversion</h3>
+                <div class="converter-row">
+                    <select id="binary-from">
+                        <option value="bin">Binary</option>
+                        <option value="dec">Decimal</option>
+                        <option value="hex">Hexadecimal</option>
+                    </select>
+                    <!-- <span>to</span> -->
+                    <button class="reverse-btn" data-type="binary" title="Reverse units">⇄</button>
+                    <select id="binary-to">
+                        <option value="bin">Binary</option>
+                        <option value="dec">Decimal</option>
+                        <option value="hex">Hexadecimal</option>
+                    </select>
+                    <input type="text" id="binary-input" placeholder="Enter binary/decimal/hex">
+                    <!-- <button onclick="clearAll()" class="reset-btn">Reset</button> -->
+                    <button class="reset-btn" data-action="clear">Reset</button>
+                </div>
+                <div class="converter-row">
+                    <strong>Result: <span id="binary-result">0</span></strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Author -->
+    <p class="author">Copyright © Bazzomir 2025 </p>
+
+    <div class="keyboard-hint">
+        <strong>Keyboard Shortcuts:</strong><br />
+        Numbers: 0-9<br />
+        Operations: + - * / % ^ <br />
+        Decimal: . <br />
+        Enter: Calculate<br />
+        Esc: Clear<br />
+        Backspace: Backspace/Delete<br />
+        Arrow keys: Navigate cursor<br />
+        Open parenthesis: (<br />
+        Close parenthesis: )
+    </div>
+
+</body>
+
+</html>
