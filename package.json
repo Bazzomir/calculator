@@ -32,7 +32,7 @@
   "bugs": {
     "url": "https://github.com/Bazzomir/calculator/issues"
   },
-  "homepage": "https://github.io/Bazzomir/calculator/",
+  "homepage": "https://bazzomir.github.io/calculator/",
   "dependencies": {
     "gh-pages": "^6.3.0"
   }
