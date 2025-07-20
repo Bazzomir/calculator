@@ -19,9 +19,21 @@
     "url": "https://github.com/Bazzomir/calculator.git"
   },
   "license": "MIT",
-  "keywords": ["calculator", "classic", "scientific", "binary", "units conversion", "JavaScript", "HTML", "CSS, 4-in-1"],
+  "keywords": [
+    "calculator",
+    "classic",
+    "scientific",
+    "binary",
+    "units conversion",
+    "JavaScript",
+    "HTML",
+    "CSS, 4-in-1"
+  ],
   "bugs": {
     "url": "https://github.com/Bazzomir/calculator/issues"
   },
-  "homepage": ""
+  "homepage": "https://github.io/Bazzomir/calculator/",
+  "dependencies": {
+    "gh-pages": "^6.3.0"
+  }
 }
