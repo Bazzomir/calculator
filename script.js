@@ -95,13 +95,11 @@ class CalculatorManager {
         const mode = checkedRadio?.value || 'classic';
         this.switchMode(mode);
 
-        // Show first converter section by default
         document.querySelectorAll('#units-calc .converter-section').forEach((section, index) => {
             section.style.display = index === 0 ? 'block' : 'none';
         });
     }
 
-    // Helper method to check if units mode is active
     isUnitsMode() {
         return document.getElementById('units')?.checked;
     }
@@ -428,7 +426,6 @@ class Calculator {
 
     evaluateExpression(expr) {
         try {
-            // Replace mathematical functions with JavaScript equivalents
             const replacements = {
                 'sin(': 'Math.sin(',
                 'cos(': 'Math.cos(',
@@ -447,12 +444,10 @@ class Calculator {
                 expr = expr.replace(new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), replace);
             });
 
-            // Convert degrees to radians for trig functions
             expr = expr.replace(/Math\.(sin|cos|tan)\(([^)]+)\)/g, (match, func, angle) => {
                 return `Math.${func}((${angle}) * Math.PI / 180)`;
             });
 
-            // Handle factorial function calls
             expr = expr.replace(/this\.factorial\(([^)]+)\)/g, (match, num) => {
                 return this.factorial(parseFloat(num));
             });
@@ -601,14 +596,11 @@ class Calculator {
             });
         });
 
-        // Keyboard events - FIXED: Only prevent default when not in units mode
         document.addEventListener('keydown', (e) => {
-            // Don't intercept keyboard input when units mode is active
             if (this.isUnitsMode()) {
-                return; // Allow normal typing in input fields
+                return;
             }
 
-            // Don't intercept if user is typing in an input field
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
                 return;
             }
@@ -642,7 +634,6 @@ class Calculator {
 // =======================
 class UnitsConverter {
     constructor() {
-        // console.log('UnitsConverter constructor called!');
         this.rates = {
             length: {
                 mm: 0.001, cm: 0.01, dm: 0.1, m: 1, dam: 10, hm: 100, km: 1000,
@@ -665,7 +656,6 @@ class UnitsConverter {
     }
 
     init() {
-        // console.log('UnitsConverter init called!')
         this.setupRadioSwitching();
         this.setupConverters();
         this.setupReverseButtons();
@@ -685,7 +675,6 @@ class UnitsConverter {
     }
 
     setupReverseButtons() {
-        // Setup reverse buttons using data-type attribute
         document.querySelectorAll('.reverse-btn[data-type]').forEach(btn => {
             const type = btn.dataset.type;
             btn.addEventListener('click', () => this.reverseUnits(type));
@@ -696,16 +685,13 @@ class UnitsConverter {
         const fromSelect = document.getElementById(`${type}-from`);
         const toSelect = document.getElementById(`${type}-to`);
 
-        // Swap the values
         [fromSelect.value, toSelect.value] = [toSelect.value, fromSelect.value];
 
-        // Trigger conversion based on type
         if (type === 'temp') {
             this.convertTemp();
         } else if (type === 'binary') {
             this.convertBinary();
         } else {
-            // For length, mass, volume - trigger the input event
             const inputId = this.getInputId(type);
             const input = document.getElementById(inputId);
             if (input && input.value) {
@@ -773,14 +759,12 @@ class UnitsConverter {
             return;
         }
 
-        // Convert to Celsius first
         const toCelsius = {
             C: (temp) => temp,
             F: (temp) => (temp - 32) * 5 / 9,
             K: (temp) => temp - 273.15
         };
 
-        // Convert from Celsius to target
         const fromCelsius = {
             C: (temp) => temp,
             F: (temp) => temp * 9 / 5 + 32,
@@ -822,17 +806,11 @@ class UnitsConverter {
     }
 
     setupResetButtons() {
-        // Debug: Check if we can find the buttons
-        // console.log('Looking for reset buttons...');
         const resetButtons = document.querySelectorAll('.reset-btn');
-        // console.log('Found reset buttons:', resetButtons.length);
 
         const resetButtonsWithAction = document.querySelectorAll('.reset-btn[data-action="clear"]');
-        // console.log('Found reset buttons with data-action:', resetButtonsWithAction.length);
 
-        // Try both approaches
         resetButtons.forEach((btn, index) => {
-            // console.log(`Reset button ${index}:`, btn);
             btn.addEventListener('click', () => {
                 console.log('Reset button clicked!');
                 this.clearAll();
@@ -860,8 +838,6 @@ class UnitsConverter {
 // =======================
 // INITIALIZATION
 // =======================
-// window.unitsConverter = new UnitsConverter();
 document.addEventListener('DOMContentLoaded', () => {
     new CalculatorManager();
-    // new UnitsConverter();
 });
