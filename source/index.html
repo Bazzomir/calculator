@@ -4,16 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>4-in-1 Calculator</title>
+    <meta name="description"
+        content="A modern web calculator with Classic, Scientific, Binary, and Unit Conversion modes—all in one fast, responsive interface." />
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
     <script src="script.js" defer></script>
+    <title>4-in-1 Calculator</title>
 </head>
 
 <body>
-    <div class="calculator-container">
+    <div class="calculator-container" role="main" aria-label="Calculator application">
         <!-- Calculator Mode Selector -->
-        <div class="calc-selector">
+        <div class="calc-selector" role="radiogroup" aria-label="Calculator mode selector">
             <input type="radio" id="classic" name="calc-type" value="classic" checked>
             <label for="classic">Classic</label>
 
@@ -28,17 +30,19 @@
         </div>
 
         <!-- Display -->
-        <div class="display" id="display">
-            <div class="display-top" id="expression" aria-label="Current expression"></div>
-            <div class="display-bottom" id="result" aria-label="Current input">
-                <span id="current-input">0</span>
-                <span class="cursor" id="cursor"></span>
+        <div class="display" id="display" role="region" aria-label="Calculator display">
+            <div class="display-top" id="expression" role="status" aria-live="polite" aria-label="Current expression">
+                <div class="display-bottom" id="result" aria-label="Current input">
+                    <span role="status" id="current-input" aria-live="polite">0</span>
+                    <!-- Role cursor не е валидна ARIA улога, заменето со aria-hidden -->
+                    <span class="cursor" id="cursor" aria-hidden="true"></span>
+                </div>
             </div>
         </div>
 
 
         <!-- Classic Calculator -->
-        <div id="classic-calc" class="buttons classic-buttons">
+        <div id="classic-calc" class="buttons classic-buttons" role="group" aria-label="Classic calculator buttons">
             <button class="btn clear" data-all-clear aria-label="Clear all">C</button>
             <button class="btn clear" data-clear-entry aria-label="Clear current entry">CE</button>
             <button class="btn" data-delete aria-label="Backspace">⌫</button>
@@ -63,11 +67,10 @@
             <button class="btn" data-number="00" aria-label="Double zero">00</button>
             <button class="btn" data-number="." aria-label="Decimal point">.</button>
             <button class="btn equals" data-equals aria-label="Equals">=</button>
-
         </div>
 
         <!-- Scientific Calculator -->
-        <div id="scientific-calc" class="buttons scientific-buttons hidden">
+        <div id="scientific-calc" class="buttons scientific-buttons hidden" role="group" aria-label="Classic calculator buttons">
             <button class="btn clear" data-all-clear aria-label="Clear all">C</button>
             <button class="btn clear" data-clear-entry aria-label="Clear current entry">CE</button>
             <button class="btn" data-delete aria-label="Backspace">⌫</button>
@@ -112,9 +115,9 @@
         </div>
 
 
-        <div id="units-calc" class="unit-converter hidden">
+        <div id="units-calc" class="unit-converter hidden role="region" aria-label="Unit converter" >
             <!-- Units mode selector -->
-            <div class="unit-selector">
+            <div class="unit-selector" role="radiogroup" aria-label="Unit type selector">
                 <input type="radio" id="unit-length" name="unit-type" value="length" checked>
                 <label for="unit-length">Length</label>
 
@@ -132,10 +135,10 @@
             </div>
 
             <!-- Length -->
-            <div class="converter-section">
+            <div class="converter-section" role="radiogroup" aria-label="Unit type selector">
                 <h3>Length Conversion</h3>
                 <div class="converter-row">
-                    <select id="length-from">
+                    <select id="length-from" aria-describedby="length-from-desc">
                         <option value="mm">Millimeter (mm)</option>
                         <option value="cm">Centimeter (cm)</option>
                         <option value="dm">Decimeter (dm)</option>
@@ -148,8 +151,8 @@
                         <option value="yd">Yard (yd)</option>
                         <option value="mi">Mile (ml)</option>
                     </select>
-                    <button class="reverse-btn" data-type="length" title="Reverse units">⇄</button>
-                    <select id="length-to">
+                    <button class="reverse-btn" data-type="length" title="Reverse units" aria-label="Reverse length units">⇄</button>
+                    <select id="length-to" aria-describedby="length-to-desc">
                         <option value="mm">Millimeter (mm)</option>
                         <option value="cm">Centimeter (cm)</option>
                         <option value="dm">Decimeter (dm)</option>
@@ -162,19 +165,19 @@
                         <option value="yd">Yard (yd)</option>
                         <option value="mi">Mile (ml)</option>
                     </select>
-                    <input type="number" id="length-input" placeholder="Enter value">
-                    <button class="reset-btn" data-action="clear">Reset</button>
+                    <input type="number" id="length-input" placeholder="Enter length" aria-label="Input length value">
+                    <button class="reset-btn" data-action="clear" aria-label="Reset length conversion">Reset</button>
                 </div>
                 <div class="converter-row">
-                    <strong>Result: <span id="length-result">0</span></strong>
+                    <strong>Result: <span role="status" id="length-result" aria-live="polite">0</span></strong>
                 </div>
             </div>
 
             <!-- Mass -->
-            <div class="converter-section">
+            <div class="converter-section" role="region" aria-label="Mass conversion section">
                 <h3>Mass Conversion</h3>
                 <div class="converter-row">
-                    <select id="mass-from">
+                    <select id="mass-from" aria-describedby="mass-from-desc">
                         <option value="mg">Milligram (mg)</option>
                         <option value="cg">Centigram (cg)</option>
                         <option value="dg">Decigram (dg)</option>
@@ -190,8 +193,8 @@
                         <option value="tonUS">Ton (t) - US</option>
                         <option value="tonUK">Ton (t) - UK</option>
                     </select>
-                    <button class="reverse-btn" data-type="mass" title="Reverse units">⇄</button>
-                    <select id="mass-to">
+                    <button class="reverse-btn" data-type="mass" title="Reverse units" aria-label="Reverse mass units">⇄</button>
+                    <select id="mass-to" aria-describedby="mass-to-desc">
                         <option value="mg">Milligram (mg)</option>
                         <option value="cg">Centigram (cg)</option>
                         <option value="dg">Decigram (dg)</option>
@@ -207,42 +210,42 @@
                         <option value="tonUS">Ton (t) - US</option>
                         <option value="tonUK">Ton (t) - UK</option>
                     </select>
-                    <input type="number" id="mass-input" placeholder="Enter value">
-                    <button class="reset-btn" data-action="clear">Reset</button>
+                    <input type="number" id="mass-input" placeholder="Enter mass" aria-label="Input mass value">
+                    <button class="reset-btn" data-action="clear" aria-label="Reset mass conversion">Reset</button>
                 </div>
                 <div class="converter-row">
-                    <strong>Result: <span id="mass-result">0</span></strong>
+                    <strong>Result: <span role="status" id="mass-result" aria-live="polite">0</span></strong>
                 </div>
             </div>
 
             <!-- Temperature -->
-            <div class="converter-section">
+            <div class="converter-section" role="region" aria-label="Temperature conversion section">
                 <h3>Temperature Conversion</h3>
                 <div class="converter-row">
-                    <select id="temp-from">
+                    <select id="temp-from" aria-describedby="temp-from-desc">
                         <option value="C">Celsius (°C)</option>
                         <option value="F">Fahrenheit (°F)</option>
                         <option value="K">Kelvin (°K)</option>
                     </select>
-                    <button class="reverse-btn" data-type="temp" title="Reverse units">⇄</button>
+                    <button class="reverse-btn" data-type="temp" title="Reverse units" aria-label="Reverse temperature units">⇄</button>
                     <select id="temp-to">
                         <option value="C">Celsius (°C)</option>
                         <option value="F">Fahrenheit (°F)</option>
                         <option value="K">Kelvin (°K)</option>
                     </select>
-                    <input type="number" id="temp-input" placeholder="Enter temperature">
-                    <button class="reset-btn" data-action="clear">Reset</button>
+                    <input type="number" id="temp-input" placeholder="Enter temperature" aria-label="Input temperature value">
+                    <button class="reset-btn" data-action="clear" aria-label="Reset temperature conversion">Reset</button>
                 </div>
                 <div class="converter-row">
-                    <strong>Result: <span id="temp-result">0</span></strong>
+                    <strong>Result: <span role="status" id="temp-result" aria-live="polite">0</span></strong>
                 </div>
             </div>
 
             <!-- Volume -->
-            <div class="converter-section">
+            <div class="converter-section" role="region" aria-label="Volume conversion section">
                 <h3>Volume Conversion</h3>
                 <div class="converter-row">
-                    <select id="volume-from">
+                    <select id="volume-from" aria-describedby="volume-from-desc">
                         <option value="ml">Milliliter (ml)</option>
                         <option value="cl">Centiliter (cl)</option>
                         <option value="dl">Deciliter (dl)</option>
@@ -261,8 +264,8 @@
                         <option value="galUS">Gallon (gal) - US</option>
                         <option value="galUK">Gallon (gal) - UK</option>
                     </select>
-                    <button class="reverse-btn" data-type="volume" title="Reverse units">⇄</button>
-                    <select id="volume-to">
+                    <button class="reverse-btn" data-type="volume" title="Reverse units" aria-label="Reverse volume units">⇄</button>
+                    <select id="volume-to" aria-describedby="volume-to-desc">
                         <option value="ml">Milliliter (ml)</option>
                         <option value="cl">Centiliter (cl)</option>
                         <option value="dl">Deciliter (dl)</option>
@@ -281,34 +284,34 @@
                         <option value="galUS">Gallon (gal) - US</option>
                         <option value="galUK">Gallon (gal) - UK</option>
                     </select>
-                    <input type="number" id="volume-input" placeholder="Enter value">
-                    <button class="reset-btn" data-action="clear">Reset</button>
+                    <input type="number" id="volume-input" placeholder="Enter volume" aria-label="Input volume value">
+                    <button class="reset-btn" data-action="clear" aria-label="Reset volume conversion">Reset</button>
                 </div>
                 <div class="converter-row">
-                    <strong>Result: <span id="volume-result">0</span></strong>
+                    <strong>Result: <span role="satus" id="volume-result" aria-live="polite">0</span></strong>
                 </div>
             </div>
 
             <!-- Binary -->
-            <div class="converter-section">
+            <div class="converter-section" role="region" aria-label="Binary conversion section">
                 <h3>Binary Conversion</h3>
                 <div class="converter-row">
-                    <select id="binary-from">
+                    <select id="binary-from" aria-describedby="binary-from-desc">
                         <option value="bin">Binary</option>
                         <option value="dec">Decimal</option>
                         <option value="hex">Hexadecimal</option>
                     </select>
-                    <button class="reverse-btn" data-type="binary" title="Reverse units">⇄</button>
-                    <select id="binary-to">
+                    <button class="reverse-btn" data-type="binary" title="Reverse units" aria-label="Reverse binary units">⇄</button>
+                    <select id="binary-to" aria-describedby="binary-to-desc">
                         <option value="bin">Binary</option>
                         <option value="dec">Decimal</option>
                         <option value="hex">Hexadecimal</option>
                     </select>
-                    <input type="text" id="binary-input" placeholder="Enter binary/decimal/hex">
-                    <button class="reset-btn" data-action="clear">Reset</button>
+                    <input type="text" id="binary-input" placeholder="Enter binary/decimal/hex" aria-describedby="binary-to-desc">
+                    <button class="reset-btn" data-action="clear" aria-label="Reset binary conversion">Reset</button>
                 </div>
                 <div class="converter-row">
-                    <strong>Result: <span id="binary-result">0</span></strong>
+                    <strong>Result: <span role="status" id="binary-result" aria-live="polite">0</span></strong>
                 </div>
             </div>
         </div>
