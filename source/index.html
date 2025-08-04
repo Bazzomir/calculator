@@ -32,14 +32,12 @@
         <!-- Display -->
         <div class="display" id="display" role="region" aria-label="Calculator display">
             <div class="display-top" id="expression" role="status" aria-live="polite" aria-label="Current expression">
-                <div class="display-bottom" id="result" aria-label="Current input">
-                    <span role="status" id="current-input" aria-live="polite">0</span>
-                    <!-- Role cursor не е валидна ARIA улога, заменето со aria-hidden -->
-                    <span class="cursor" id="cursor" aria-hidden="true"></span>
-                </div>
+            </div>
+            <div class="display-bottom" id="result" aria-label="Current input">
+                <span role="status" id="current-input" aria-live="polite">0</span>
+                <span role="cursor" class="cursor" id="cursor" aria-hidden="true"></span>
             </div>
         </div>
-
 
         <!-- Classic Calculator -->
         <div id="classic-calc" class="buttons classic-buttons" role="group" aria-label="Classic calculator buttons">
@@ -70,7 +68,8 @@
         </div>
 
         <!-- Scientific Calculator -->
-        <div id="scientific-calc" class="buttons scientific-buttons hidden" role="group" aria-label="Classic calculator buttons">
+        <div id="scientific-calc" class="buttons scientific-buttons hidden" role="group"
+            aria-label="Classic calculator buttons">
             <button class="btn clear" data-all-clear aria-label="Clear all">C</button>
             <button class="btn clear" data-clear-entry aria-label="Clear current entry">CE</button>
             <button class="btn" data-delete aria-label="Backspace">⌫</button>
@@ -115,7 +114,7 @@
         </div>
 
 
-        <div id="units-calc" class="unit-converter hidden role="region" aria-label="Unit converter" >
+        <div id="units-calc" class="unit-converter hidden role=" region" aria-label="Unit converter">
             <!-- Units mode selector -->
             <div class="unit-selector" role="radiogroup" aria-label="Unit type selector">
                 <input type="radio" id="unit-length" name="unit-type" value="length" checked>
@@ -151,7 +150,8 @@
                         <option value="yd">Yard (yd)</option>
                         <option value="mi">Mile (ml)</option>
                     </select>
-                    <button class="reverse-btn" data-type="length" title="Reverse units" aria-label="Reverse length units">⇄</button>
+                    <button class="reverse-btn" data-type="length" title="Reverse units"
+                        aria-label="Reverse length units">⇄</button>
                     <select id="length-to" aria-describedby="length-to-desc">
                         <option value="mm">Millimeter (mm)</option>
                         <option value="cm">Centimeter (cm)</option>
@@ -193,7 +193,8 @@
                         <option value="tonUS">Ton (t) - US</option>
                         <option value="tonUK">Ton (t) - UK</option>
                     </select>
-                    <button class="reverse-btn" data-type="mass" title="Reverse units" aria-label="Reverse mass units">⇄</button>
+                    <button class="reverse-btn" data-type="mass" title="Reverse units"
+                        aria-label="Reverse mass units">⇄</button>
                     <select id="mass-to" aria-describedby="mass-to-desc">
                         <option value="mg">Milligram (mg)</option>
                         <option value="cg">Centigram (cg)</option>
@@ -227,14 +228,17 @@
                         <option value="F">Fahrenheit (°F)</option>
                         <option value="K">Kelvin (°K)</option>
                     </select>
-                    <button class="reverse-btn" data-type="temp" title="Reverse units" aria-label="Reverse temperature units">⇄</button>
+                    <button class="reverse-btn" data-type="temp" title="Reverse units"
+                        aria-label="Reverse temperature units">⇄</button>
                     <select id="temp-to">
                         <option value="C">Celsius (°C)</option>
                         <option value="F">Fahrenheit (°F)</option>
                         <option value="K">Kelvin (°K)</option>
                     </select>
-                    <input type="number" id="temp-input" placeholder="Enter temperature" aria-label="Input temperature value">
-                    <button class="reset-btn" data-action="clear" aria-label="Reset temperature conversion">Reset</button>
+                    <input type="number" id="temp-input" placeholder="Enter temperature"
+                        aria-label="Input temperature value">
+                    <button class="reset-btn" data-action="clear"
+                        aria-label="Reset temperature conversion">Reset</button>
                 </div>
                 <div class="converter-row">
                     <strong>Result: <span role="status" id="temp-result" aria-live="polite">0</span></strong>
@@ -264,7 +268,8 @@
                         <option value="galUS">Gallon (gal) - US</option>
                         <option value="galUK">Gallon (gal) - UK</option>
                     </select>
-                    <button class="reverse-btn" data-type="volume" title="Reverse units" aria-label="Reverse volume units">⇄</button>
+                    <button class="reverse-btn" data-type="volume" title="Reverse units"
+                        aria-label="Reverse volume units">⇄</button>
                     <select id="volume-to" aria-describedby="volume-to-desc">
                         <option value="ml">Milliliter (ml)</option>
                         <option value="cl">Centiliter (cl)</option>
@@ -301,13 +306,15 @@
                         <option value="dec">Decimal</option>
                         <option value="hex">Hexadecimal</option>
                     </select>
-                    <button class="reverse-btn" data-type="binary" title="Reverse units" aria-label="Reverse binary units">⇄</button>
+                    <button class="reverse-btn" data-type="binary" title="Reverse units"
+                        aria-label="Reverse binary units">⇄</button>
                     <select id="binary-to" aria-describedby="binary-to-desc">
                         <option value="bin">Binary</option>
                         <option value="dec">Decimal</option>
                         <option value="hex">Hexadecimal</option>
                     </select>
-                    <input type="text" id="binary-input" placeholder="Enter binary/decimal/hex" aria-describedby="binary-to-desc">
+                    <input type="text" id="binary-input" placeholder="Enter binary/decimal/hex"
+                        aria-describedby="binary-to-desc">
                     <button class="reset-btn" data-action="clear" aria-label="Reset binary conversion">Reset</button>
                 </div>
                 <div class="converter-row">

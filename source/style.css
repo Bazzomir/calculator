@@ -45,7 +45,7 @@ body {
     }
 
     :checked+label {
-        background: #667eea;
+        background: #2547DA;
         color: white;
         transform: translateY(-2px);
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
@@ -78,7 +78,7 @@ body {
             }
 
             :checked+label {
-                background: #667eea;
+                background: #2547DA;
                 color: white;
                 transform: translateY(-2px);
                 box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
